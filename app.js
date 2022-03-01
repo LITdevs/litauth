@@ -116,22 +116,22 @@ app.set('trust proxy', 1);
 	})
 }*/
 
-app.get('/login', grl, function(req, res) {
+app.get('/login', function(req, res) {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
 	res.render(__dirname + '/public/login.ejs', {user: user, gravatarHash: user ? crypto.createHash("md5").update(user.primaryEmail.toLowerCase()).digest("hex") : null, redirect: req.session.redirectTo != undefined && req.session.redirectTo.length > 1 ? true : false});
 });
 
-app.get("/profile", grl, checkAuth, popupMid, function (req, res) {
+app.get("/profile", checkAuth, popupMid, function (req, res) {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
 	res.render(__dirname + '/public/profile.ejs', {user: user, gravatarHash: user ? crypto.createHash("md5").update(user.primaryEmail.toLowerCase()).digest("hex") : null});
 });
 
-app.get("/editProfile", grl, checkAuth, popupMid, function (req, res) { 
+app.get("/editProfile", checkAuth, popupMid, function (req, res) { 
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
 	res.render(__dirname + '/public/editProfile.ejs', {user: user, gravatarHash: user ? crypto.createHash("md5").update(user.primaryEmail.toLowerCase()).digest("hex") : null, csrfToken: req.csrfToken()});
 })
 
-app.post("/editProfile", grl ,checkAuth, function(req, res) {
+app.post("/editProfile", checkAuth, function(req, res) {
 	if(req.body.username != "") {
 	  db.changeUsername(req.user, req.body.username)
 	  req.session.passport.user.username = req.body.username
@@ -147,12 +147,12 @@ app.get('/terms', function(req, res){
 	res.redirect('/resources/terms.html');
 });
 
-app.get('/delete', grl, checkAuth, function(req,res) {
+app.get('/delete', checkAuth, function(req,res) {
 	user = req.user._id ? req.user : req.user[0]
 	res.render(__dirname + "/public/deleteConfirm.ejs", {csrfToken: req.csrfToken(), twoFactor: user.twoFactor})
 })
 /*
-app.post('/delete2fa', grl, checkAuth, function(req, res) {
+app.post('/delete2fa', checkAuth, function(req, res) {
 	user = req.user._id ? req.user : req.user[0]
 	if(!twoFactor) res.status(400).send("what are you doing.")
 	var verified = speakeasy.totp.verify({ secret: user.twoFactorSecret,
@@ -173,7 +173,7 @@ app.post('/delete2fa', grl, checkAuth, function(req, res) {
 	
 })
 */
-app.post("/delete", grl, checkAuth, function(req, res) {
+app.post("/delete", checkAuth, function(req, res) {
 	user = req.user._id ? req.user : req.user[0]
 	if(user.twoFactor && !req.session.delete2fa) res.redirect("/logout");
 	db.deleteUser(user, function(result) {
@@ -264,18 +264,18 @@ app.get('/otpcallback', function(req, res) {
 })
 */
 
-app.get('/logout', grl, function(req, res) {
+app.get('/logout', function(req, res) {
 	req.logout();
 	res.redirect('/');
 });
 /*
-app.get("/popup", grl, checkAuth, function (req, res) {
+app.get("/popup", checkAuth, function (req, res) {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
 	res.render(__dirname + '/public/popup.ejs', {csrfToken: req.csrfToken(), user: user, gravatarHash: crypto.createHash("md5").update(user.primaryEmail.toLowerCase()).digest("hex"), redirect: req.session.redirectTo != undefined && req.session.redirectTo.length > 1 ? true : false});
 	
 })
 
-app.post('/popup', grl, checkAuth, function (req, res) {
+app.post('/popup', checkAuth, function (req, res) {
 	if(req.body.popup != "yes") return res.redirect("/delete")
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
 	db.acceptPopup(user._id)
@@ -329,7 +329,7 @@ function checkAuthtime(req, res, next) {
 	}
 	res.send("what")
 }
-app.get('/2fa', grl, checkAuthnofa, function(req, res) {
+app.get('/2fa', checkAuthnofa, function(req, res) {
 	let user = req.user._id ? req.user : req.user[0];
 	db.getUser(user._id, user => {
 		if(user.twoFactor) return res.render(`${__dirname}/public/2fareset.ejs`, {csrfToken: req.csrfToken(), user: user, gravatarHash: crypto.createHash("md5").update(user.primaryEmail.toLowerCase()).digest("hex")});
@@ -343,7 +343,7 @@ app.get('/2fa', grl, checkAuthnofa, function(req, res) {
 	})
 });
 
-app.get('/validate2fa', grl, function(req, res) {
+app.get('/validate2fa', function(req, res) {
 	if (!req.isAuthenticated) return res.redirect("/login");
 	let user = req.user._id ? req.user : req.user[0];
 	db.getUser(user._id, user => {
