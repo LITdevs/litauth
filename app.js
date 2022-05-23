@@ -81,7 +81,7 @@ app.set('trust proxy', 1);
 
 app.get('/', function(req, res) {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
-	res.render(__dirname + '/public/index.ejs', {user: user});
+	res.render(__dirname + '/public/index.ejs', {user: user, csrfToken: req.csrfToken()});
 });
 
 app.get('/privacy', function(req, res){
