@@ -28,6 +28,7 @@
     "tailwindcss": "^3.0.22"
   },
   "dependencies": {
+    "@tailwindcss/line-clamp": "^0.4.0",
     "connect-mongodb-session": "^3.0.0",
     "cookie-parser": "^1.4.6",
     "csurf": "^1.11.0",
@@ -40,6 +41,7 @@
     "node-fetch": "^2.6.7",
     "nodemailer": "^6.7.2",
     "passport": "^0.5.2",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "tw-elements": "^1.0.0-alpha12"
   }
 }
