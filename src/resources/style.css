@@ -2,3 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+.button {
+    @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-wdark bg-vwhite dark:text-vwhite dark:bg-wdark dark:hover:bg-vukky dark:hover:text-vwhite hover:bg-vukky hover:text-vwhite;
+}
+
+.button-dark {
+    @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-vwhite bg-wdark dark:text-wdark dark:bg-vwhite dark:hover:bg-vukky dark:hover:text-vwhite hover:bg-vukky hover:text-vwhite;
+}
+
+.input-box {
+    @apply shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none;
+}
+
+.input-box:focus {
+    box-shadow: 0 0 0 3px rgba(66,153,225,.5)!important;
+}

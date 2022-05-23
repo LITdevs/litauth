@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LITauth - Login</title>
+    <%- include('./common/darkmode.ejs') %>
+  </head>
+  <body class="bg-gray-900">
+    <%- include("./common/nav.ejs", {user: user, my: false}); %> 
+    <form action="/login/password" method="post" class="mt-20p text-center space-y-5">
+    <input type="hidden" name="_csrf" value="<%=csrfToken %>">
+    <input type="text" name="username" class="input-box" placeholder="Username"><br>
+    <input type="password" name="password" class="input-box" placeholder="Password"><br>
+    <input type="submit" class="button" value="Login"><br>
+    <% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
+    </form>
+  </body>
+</html>

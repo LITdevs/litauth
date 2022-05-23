@@ -1,0 +1,37 @@
+<div class="bg-vwhite dark:bg-vgray text-vgray dark:text-vwhite w-full h-12 mb-5 flex">
+    <div id="themeSwitch" class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-md my-auto ml-auto mr-2 inline-flex p-2 cursor-pointer" onclick="toggleTheme()">
+        <i title="Toggle darkmode" class="themeSwitch fa-solid"></i>
+    </div>
+    <% if (user) { %>
+        <div id="ubutton" class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-md w-40 my-auto mr-2 inline-flex p-2 cursor-pointer" onclick="udropdown(false)">
+            <p class="inline truncate" title="<%=user.username%>"><%=user.username%></p><i class="fa-solid fa-angle-down inline my-auto ml-auto"></i>
+            <div id="ucontent" class="dropdown-content hidden w-40 absolute right-2 z-[60] top-12 bg-vwhite text-vgray dark:bg-vgray dark:text-vwhite rounded-b-lg cursor-auto shadow-xl" onclick="event.stopPropagation();">
+                <a href="/profile"><div class="hover:bg-wlight dark:hover:bg-wlight-dark py-4 px-2"><p>My profile</p></div></a>
+                <a href="/logout"><div class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-b-lg py-4 px-2"><p>Logout</p></div></a>
+            </div>
+        </div>
+    <% } else { %>
+        <div id="ubutton" class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-md my-auto mr-2 inline-flex p-2">
+            <a href="/login"><div>
+                <p class="inline truncate" title="Login">Login</p>&nbsp;&nbsp;<i class="fa-solid fa-key inline my-auto ml-auto"></i>
+            </div></a>
+        </div>
+    <% } %> 
+    
+</div>
+
+<script>
+    let udropdownState = false;
+    function udropdown(forceClose) {
+        udropdownState = !udropdownState;
+        if (forceClose) udropdownState = false;
+        if (udropdownState) {
+            document.querySelector("#ucontent").classList.remove("hidden");
+            document.querySelector("#ubutton").classList.add(`bg-wlight${localStorage.theme == "dark" ? "-dark" : ""}`);
+        } else {
+            document.querySelector("#ucontent").classList.add("hidden");
+            document.querySelector("#ubutton").classList.remove("bg-wlight");
+            document.querySelector("#ubutton").classList.remove("bg-wlight-dark");
+        }
+    }
+</script>

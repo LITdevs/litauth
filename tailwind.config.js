@@ -8,9 +8,13 @@ module.exports = {
   theme: {
     extend: {},
     colors: {
-      vukky: "#00a8f3",
-      vwhite: "#f8f7ff",
-      vgray: "#494949"
+      'vukky': "#00a8f3",
+      'vwhite': "#f8f7ff",
+      'vgray': "#494949",
+      'wdark': '#3c3c45',
+      'wlight': '#e0e0e0',
+      'wlight-dark': '#555562',
+      'wblue-dark': '#227baa'
     }
   },
   variants: {

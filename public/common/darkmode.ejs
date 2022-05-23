@@ -1,0 +1,33 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="stylesheet" href="/resources/style.css">
+<script src="https://kit.fontawesome.com/1b8f1d833c.js" crossorigin="anonymous"></script>
+<script>
+if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark')
+} else {
+    document.documentElement.classList.remove('dark')
+}
+document.addEventListener('DOMContentLoaded', function () {
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+		document.querySelector(".themeSwitch").classList.add("fa-sun")
+	} else {
+		document.querySelector(".themeSwitch").classList.add("fa-moon")
+	}
+})
+function toggleTheme() {
+	if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+		localStorage.theme = 'light'
+    	document.documentElement.classList.remove('dark')
+		document.querySelector(".themeSwitch").classList.add("fa-moon")
+		document.querySelector(".themeSwitch").classList.remove("fa-sun")
+		document.querySelectorAll(".bg-wlight-dark").forEach(e => { e.classList.remove("bg-wlight-dark"); e.classList.add("bg-wlight") })
+
+	} else {
+		localStorage.theme = 'dark'
+    	document.documentElement.classList.add('dark')
+		document.querySelector(".themeSwitch").classList.add("fa-sun")
+		document.querySelector(".themeSwitch").classList.remove("fa-moon")
+		document.querySelectorAll(".bg-wlight").forEach(e => { e.classList.remove("bg-wlight"); e.classList.add("bg-wlight-dark") })
+	}
+}
+</script>
