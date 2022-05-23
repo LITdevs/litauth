@@ -17,7 +17,6 @@ module.exports = {
         'wblue-dark': '#227baa'
       }
     },
-    
   },
   variants: {
     extend: {}
