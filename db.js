@@ -11,6 +11,7 @@ db.once('open', function() {
 	const userSchema = new mongoose.Schema({
 	username: String,
 	passwordHash: Buffer,
+	email: String,
 	salt: Buffer
 	});
 	User = mongoose.model('User', userSchema);
