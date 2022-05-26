@@ -23,7 +23,7 @@
 		document.getElementById("error").textContent = "";
         e.preventDefault()
 		if (document.getElementById("registrationForm").password.value != document.getElementById("registrationForm").password2.value) return document.getElementById("error").textContent = "Passwords do not match"
-		fetch('/create_account', {
+		fetch('/login/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
