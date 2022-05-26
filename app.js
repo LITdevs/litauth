@@ -100,7 +100,7 @@ app.get('/logout', function(req, res) {
 app.post("/login/register", (req, res) => {
 	//TODO: use flash messages
 	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", message: "Invalid email address"});
-	if(req.body.username.trim().length < 3) return res.status(400).send({type: "password", message: "Username must be at least 3 characters long"});
+	if(req.body.username.trim().length < 3) return res.status(400).send({type: "username", message: "Username must be at least 3 characters long"});
 	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
 	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
 	
