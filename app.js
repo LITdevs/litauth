@@ -63,9 +63,8 @@ app.use(function (err, req, res, next) {
 
 passport.use(new LocalStrategy(function verify(username, password, cb) {
 	db.login(username, function(err, data) {
-	  if (err) { return cb(err); }
-	  console.log(data)
-	  if (!data) { return cb(null, false, { message: 'Incorrect email address.' }); }
+	  if (err) return cb(err);
+	  if (!data) return cb(null, false, { message: 'Incorrect email address.' });
 	  crypto.pbkdf2(password, data.salt, 310000, 32, 'sha256', function(err, hashedInput) {
 		if (err) { return cb(err); }
 		if (!crypto.timingSafeEqual(data.passwordHash, hashedInput)) {
