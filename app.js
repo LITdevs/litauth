@@ -128,6 +128,11 @@ app.post('/login/password', passport.authenticate('local', {
 	failureFlash: true
 }));
 
+app.get('/register', (req, res) => {
+	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
+	res.render(__dirname + '/public/register.ejs', {user, csrfToken: req.csrfToken()});
+})
+
 app.get('/info', checkAuth, (req, res) => {
 	res.send(JSON.stringify(req.user));
 })

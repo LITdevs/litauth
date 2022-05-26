@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<title>LITauth - Register</title>
+    <%- include('./common/darkmode.ejs') %>
+  </head>
+  <body class="bg-gray-900">
+    <%- include("./common/nav.ejs", {user: user}); %> 
+	<form id="registrationForm" class="mt-20p text-center space-y-5">
+	<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
+	<input type="text" name="username" placeholder="Username" class="input-box" required><br>
+	<input type="email" name="email" placeholder="Email" class="input-box" required><br>
+	<input type="password" name="password" placeholder="Password" class="input-box" required><br>
+	<input type="password" name="password2" placeholder="Confirm password" class="input-box" required><br>
+	<input type="submit" class="button" value="Register">
+	<% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
+	<span class="text-red-800" id="error"></span>
+	</form>
+  </body>
+  <script>
+	let csrf = document.getElementById("csrf").value;
+	document.getElementById("registrationForm").onsubmit = (e) => {
+		document.getElementById("error").textContent = "";
+        e.preventDefault()
+		if (document.getElementById("registrationForm").password.value != document.getElementById("registrationForm").password2.value) return document.getElementById("error").textContent = "Passwords do not match"
+		fetch('/create_account', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    _csrf: csrf,
+					username: document.getElementById("registrationForm").username.value,
+					email: document.getElementById("registrationForm").email.value,
+					password: document.getElementById("registrationForm").password.value,
+					password2: document.getElementById("registrationForm").password2.value
+                })
+            }).then(res => {
+               switch(res.status) {
+					case 400:
+						res.text().then(text => {
+							document.getElementById("error").textContent = text
+						})
+					   break;
+					case 500:
+						document.getElementById("error").textContent = "Server encountered an error, please try again later"
+						break;
+					case 200:
+						fetch('/login/password', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								_csrf: csrf,
+								username: document.getElementById("registrationForm").email.value,
+								password: document.getElementById("registrationForm").password.value
+							})
+						}).then(res => {
+							if (!res.status == 200) return document.getElementById("error").textContent = "Your account has been created, but we had an issue logging you in."
+							window.location.pathname = "/info"
+						});
+					break;
+			   }
+        });
+	}
+  </script>
+</html>
