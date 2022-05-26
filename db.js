@@ -73,7 +73,7 @@ function checkEmail(email, cb) {
 }
 
 function checkName(username, cb) {
-	User.findOne({username:username}, (err, res) => {
+	User.findOne({ 'username': { $regex: new RegExp(`^${username}$`), $options: 'i' } }, (err, res) => {
 		if (err) {
 			cb(true)
 			return console.error(err);
