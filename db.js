@@ -9,9 +9,9 @@ var User
 var Code
 db.once('open', function() {
 	const userSchema = new mongoose.Schema({
-	username: String,
+	username: {type: String, unique : true},
 	passwordHash: Buffer,
-	email: String,
+	email: {type: String, unique : true},
 	salt: Buffer
 	});
 	User = mongoose.model('User', userSchema);
@@ -72,8 +72,20 @@ function checkEmail(email, cb) {
 	})
 }
 
+function checkName(username, cb) {
+	User.findOne({username:username}, (err, res) => {
+		if (err) {
+			cb(true)
+			return console.error(err);
+		}
+		if(res) return cb("used")
+		cb(null)
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
+	checkName,
 	createAccount
 }

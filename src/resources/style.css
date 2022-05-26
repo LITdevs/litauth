@@ -17,3 +17,7 @@
 .input-box:focus {
     box-shadow: 0 0 0 3px rgba(66,153,225,.5)!important;
 }
+
+.input-invalid {
+    box-shadow: 0 0 0 3px rgba(255,0,0,.75);
+}

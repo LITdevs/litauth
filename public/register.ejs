@@ -8,10 +8,13 @@
     <%- include("./common/nav.ejs", {user: user}); %> 
 	<form id="registrationForm" class="mt-20p text-center space-y-5">
 	<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
-	<input type="text" name="username" placeholder="Username" class="input-box" required><br>
-	<input type="email" name="email" placeholder="Email" class="input-box" required><br>
-	<input type="password" name="password" placeholder="Password" class="input-box" required><br>
-	<input type="password" name="password2" placeholder="Confirm password" class="input-box" required><br>
+	<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid')" required><br>
+	<span class="text-red-800" id="usr_error"></span><br>
+	<input type="email" name="email" placeholder="Email" class="input-box" id="email_input" onchange="this.classList.remove('input-invalid')" required><br>
+	<span class="text-red-800" id="email_error"></span><br>
+	<input type="password" name="password" placeholder="Password" class="input-box" id="pass_input" onchange="this.classList.remove('input-invalid')" required><br>
+	<span class="text-red-800" id="pass_error"></span><br>
+	<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid')" required><br>
 	<input type="submit" class="button" value="Register">
 	<% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
 	<span class="text-red-800" id="error"></span>
@@ -38,12 +41,28 @@
             }).then(res => {
                switch(res.status) {
 					case 400:
-						res.text().then(text => {
-							document.getElementById("error").textContent = text
+						res.json().then(json => {
+							if(json.type == "username") {
+                                document.getElementById("usr_input").classList.add("input-invalid");
+                                return document.getElementById("usr_error").textContent = json.message;
+                            }
+							if(json.type == "email") {
+                                document.getElementById("email_input").classList.add("input-invalid");
+                                return document.getElementById("email_error").textContent = json.message;
+                            }
+                            if(json.type == "password") {
+                                document.getElementById("pass_input").classList.add("input-invalid");
+                                document.getElementById("pass_input2").classList.add("input-invalid");
+                                return document.getElementById("pass_error").textContent = json.message;
+                            }
+                            document.getElementById("error").textContent = "ERR_USER_FAULT_400"; // this shouldnt happen, but if it does then it does
 						})
 					   break;
 					case 500:
-						document.getElementById("error").textContent = "Server encountered an error, please try again later"
+                        res.json().then(json => {
+                            if(json.type == "error") return document.getElementById("error").textContent = json.message;
+                            document.getElementById("error").textContent = "Server encountered an error, please try again later"
+                        })
 						break;
 					case 200:
 						fetch('/login/password', {

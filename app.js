@@ -99,25 +99,32 @@ app.get('/logout', function(req, res) {
 
 app.post("/login/register", (req, res) => {
 	//TODO: use flash messages
-	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send("Invalid email address");
-	if(req.body.username.trim().length < 3) return res.status(400).send("Username must be at least 3 characters long");
-	if(req.body.password.trim().length < 8) return res.status(400).send("Password must be at least 8 characters long");
-	if(req.body.password !== req.body.password2) return res.status(400).send("Passwords do not match");
+	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", message: "Invalid email address"});
+	if(req.body.username.trim().length < 3) return res.status(400).send({type: "password", message: "Username must be at least 3 characters long"});
+	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
+	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
 	
 	db.checkEmail(req.body.email, resp => {
 		if (resp) {
-			if (resp == "used") return res.status(400).send("An account is already registered to this email address");
-			return res.status(500).send("Internal server error, please try again later");
+			if (resp == "used") return res.status(400).send({type: "email", message: "An account is already registered to this email address"});
+			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
 		}
 
-		let salt = crypto.randomBytes(16);
-		crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', (err, pwd) => {
-			if (err) return res.status(500).send("Internal server error, please try again later");
-			db.createAccount(req.body.email, req.body.username, pwd, salt, data => {
-				if(data.error) return res.status(500).send(data.error);
-				if(data.success) return res.sendStatus(200)
+		db.checkName(req.body.username, resp => {
+			if (resp) {
+				if (resp == "used") return res.status(400).send({type: "username", message: "This username is already taken!"});
+				return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+			}
+
+			let salt = crypto.randomBytes(16);
+			crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', (err, pwd) => {
+				if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+				db.createAccount(req.body.email, req.body.username, pwd, salt, data => {
+					if(data.error) return res.status(500).send({type: "error", message: data.error});
+					if(data.success) return res.sendStatus(200)
+				});
 			});
-		});
+		})
 	})
 })
 
