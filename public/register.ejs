@@ -25,7 +25,11 @@
 	document.getElementById("registrationForm").onsubmit = (e) => {
 		document.getElementById("error").textContent = "";
         e.preventDefault()
-		if (document.getElementById("registrationForm").password.value != document.getElementById("registrationForm").password2.value) return document.getElementById("error").textContent = "Passwords do not match"
+		if (document.getElementById("registrationForm").password.value != document.getElementById("registrationForm").password2.value) {
+            document.getElementById("pass_input").classList.add("input-invalid");
+            document.getElementById("pass_input2").classList.add("input-invalid");
+            return document.getElementById("pass_error").textContent = "Passwords do not match"
+        }
 		fetch('/login/register', {
                 method: 'POST',
                 headers: {
