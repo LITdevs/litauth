@@ -113,12 +113,22 @@ app.post("/login/register", (req, res) => {
 		let salt = crypto.randomBytes(16);
 		crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', (err, pwd) => {
 			if (err) return res.status(500).send("Internal server error, please try again later");
-			db.createAccount(req.body.email, req.body.username, pwd, salt, req.body.invite, data => {
+			db.createAccount(req.body.email, req.body.username, pwd, salt, data => {
 				if(data.error) return res.status(500).send(data.error);
 				if(data.success) return res.sendStatus(200)
 			});
 		});
 	})
+})
+
+app.post('/login/password', passport.authenticate('local', {
+	successReturnToOrRedirect: '/info',
+	failureRedirect: '/',
+	failureFlash: true
+}));
+
+app.get('/info', checkAuth, (req, res) => {
+	res.send(JSON.stringify(req.user));
 })
 
 function checkAuth(req, res, next) {
