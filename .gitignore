@@ -126,3 +126,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 emailConfig.json
+public/resources/style.css
