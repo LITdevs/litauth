@@ -4,14 +4,44 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>404 Not Found</title>
-		<link rel="stylesheet" href="https://vukkybox.com/resources/style.css">
-		<meta property="og:site_name" content="LIT Auth">
-		<meta name="title" content="404">
-		<meta name="description" content="This page could not be accessed.">
-		<meta property="og:image" content="https://raw.githubusercontent.com/Vukkyy/vukmoji/master/emojis/static/vukkyconfused.png">
+		<meta property="og:site_name" content="pankeks">
+		<meta name="title" content="pankeks">
+		<meta name="description" content="pankeks">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet"> 
+		<script>
+			// if we have permission
+			new Audio('/resources/404.mp3').play();
+			setInterval(() => {
+				document.querySelector("#happyface").innerHTML = document.querySelector("#happyface").innerHTML += "D";
+			}, 20);
+		</script>
+		<style>
+			* {
+				font-family: 'Comic Neue', cursive;
+				background-color: black;
+				word-wrap: break-word;
+			}
+			h1 {
+				color: magenta;
+			}
+			p {
+				color: cyan;
+			}
+			small {
+				color: lime;
+			}
+			button {
+				color: red;
+			}
+		</style>
 	</head>
-	<body class="bg-gray-100">
-			<p>404 is the http reponse code for Not Found, this is why your friend may break down laughing while staring at a vending machine with item 404 missing</p>
-			<br><a href="/" class="text-blue-500"><p>go home</p></a>
-	</body> 
+	<body>
+		<h1>sorry but nimpko ate your page for breakfast</h1>
+		<p>please try a different page... thanks :<span id="happyface">D</span><br>also here is a photo of the accident</p><br><br>
+		<small>"mmm.. yummy pancaek..."</small><br>
+		<img src="/resources/404.png" width="128" onclick="new Audio('/resources/404-2.wav').play()" style="cursor: pointer;"> <small>(the page is inside the pancaek)</small>
+		<br><button onclick="new Audio('/resources/404.mp3').play()">play musicz</button>
+	</body>
 </html>

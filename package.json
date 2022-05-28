@@ -36,6 +36,7 @@
     "ejs": "^3.1.6",
     "express": "^4.17.2",
     "express-flash": "^0.0.2",
+    "express-rate-limit": "^6.4.0",
     "express-session": "^1.17.2",
     "mongoose": "^6.2.1",
     "node-fetch": "^2.6.7",

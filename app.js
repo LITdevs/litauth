@@ -9,7 +9,8 @@ var express  = require('express')
   , flash = require('express-flash')
   , csrf = require("csurf")
   , fs = require('fs')
-  , nodemailer = require("nodemailer");
+  , nodemailer = require("nodemailer")
+  , rateLimit = require('express-rate-limit');
 require("dotenv").config();
 const MongoDBStore = require("connect-mongodb-session")(session);
 
@@ -106,7 +107,7 @@ app.get('/logout', function(req, res) {
 	res.send('you killed niko');
 });
 
-app.post("/login/register", (req, res) => {
+/*app.post("/login/register", (req, res) => {
 	//TODO: use flash messages
 	req.body.email = req.body.email.toLowerCase();
 	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", message: "Invalid email address"});
@@ -135,6 +136,86 @@ app.post("/login/register", (req, res) => {
 				});
 			});
 		})
+	})
+})*/
+
+let registerRateLimit = rateLimit({
+	windowMs: 60 * 1000, // 1 minute
+	max: 1, // limit each IP to 1 requests per windowMs
+	message: "Too many requests, please try again later",
+	keyGenerator: function (req /*, res*/) {
+		return req.headers["cf-connecting-ip"];
+	},
+})
+
+app.post("/login/register/1", (req, res) => {
+	//TODO: use flash messages
+	req.body.email = req.body.email.toLowerCase();
+	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", message: "Invalid email address"});
+	if(req.body.username.trim().length < 3) return res.status(400).send({type: "username", message: "Username must be at least 3 characters long"});
+	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
+	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
+	let usernameRegex = /[^a-zA-Z0-9\-_.,]/
+	if(usernameRegex.test(req.body.username)) return res.status(400).send({type: "username", message: "Username must match /[^a-zA-Z0-9\-_.,]/"});
+	
+	db.checkEmail(req.body.email, resp => {
+		if (resp) {
+			if (resp == "used") return res.status(400).send({type: "email", message: "An account is already registered to this email address"});
+			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+		}
+
+		db.checkName(req.body.username, resp => {
+			if (resp) {
+				if (resp == "used") return res.status(400).send({type: "username", message: "This username is already taken!"});
+				return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+			}
+			registerRateLimit(req, res, () => {
+				let salt = crypto.randomBytes(16);
+				crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', (err, pwd) => {
+					if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+					req.session.email = req.body.email
+					req.session.username = req.body.username
+					req.session.passwordHash = pwd
+					req.session.salt = salt
+					req.session.resend = false
+					req.session.emailCode = ~~(Math.random() * 10 ** 6)
+					req.session.save(err => {
+						if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+						let transporter = nodemailer.createTransport(emailConfig.mailerConfig);
+						let emailContent = fs.readFileSync(`${__dirname}/email/verification.html`).toString();
+						emailContent = emailContent.replace("$username", req.body.username);
+						emailContent = emailContent.replace("$emailVerificationCode", req.session.emailCode);
+						transporter.sendMail({
+							from: emailConfig.sender,
+							to: req.body.email,
+							subject: "LITauth Account Verification",
+							html: emailContent
+						}).then(info => {
+							res.sendStatus(200)
+						})
+					})
+				});
+			})
+		})
+	})
+})
+
+app.get("/login/register/resend", (req, res) => {
+	if (!req.session.emailCode) return res.status(400).send({type: "error", message: "Registration is not in progress"});
+	if (req.session.resend) return res.status(403).send({type: "error", message: "You have already requested a verification email"});
+	let transporter = nodemailer.createTransport(emailConfig.mailerConfig);
+	let emailContent = fs.readFileSync(`${__dirname}/email/verification.html`).toString();
+	emailContent = emailContent.replace("$username", req.session.username);
+	emailContent = emailContent.replace("$emailVerificationCode", req.session.emailCode);
+	transporter.sendMail({
+		from: emailConfig.sender,
+		to: req.session.email,
+		subject: "LITauth Account Verification",
+		html: emailContent
+	}).then(info => {
+		req.session.resend = true
+		req.session.save()
+		res.sendStatus(200)
 	})
 })
 

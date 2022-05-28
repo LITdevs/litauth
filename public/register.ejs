@@ -2,35 +2,100 @@
 <html>
   <head>
 	<title>LITauth - Register</title>
+	<link rel="preload" href="/resources/signup_1.mp3" as="audio">
+	<link rel="preload" href="/resources/signup_2.mp3" as="audio">
+	<link rel="preload" href="/resources/signup_3.mp3" as="audio">
     <%- include('./common/darkmode.ejs') %>
   </head>
   <body class="bg-gray-900">
+	<audio id="coolmusic1" autoplay loop src="/resources/signup_1.mp3"></audio>
+	<audio id="coolmusic2" autoplay muted loop src="/resources/signup_2.mp3"></audio>
+	<audio id="coolmusic3" autoplay muted loop src="/resources/signup_3.mp3"></audio>
     <%- include("./common/nav.ejs", {user: user}); %> 
-	<form id="registrationForm" class="mt-20p text-center space-y-5">
-	<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
-	<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid')" required><br>
-	<span class="text-red-800" id="usr_error"></span><br>
-	<input type="email" name="email" placeholder="Email" class="input-box" id="email_input" onchange="this.classList.remove('input-invalid')" required><br>
-	<span class="text-red-800" id="email_error"></span><br>
-	<input type="password" name="password" placeholder="Password" class="input-box" id="pass_input" onchange="this.classList.remove('input-invalid')" required><br>
-	<span class="text-red-800" id="pass_error"></span><br>
-	<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid')" required><br>
-	<input type="submit" class="button" value="Register">
-	<% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
-	<span class="text-red-800" id="error"></span>
-	</form>
+	<div id="register_info">
+		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1>
+		<form id="registrationForm" class="mt-20p text-center space-y-5">
+			<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
+			<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');document.getElementById('usr_error').innerHTML = ''" required><br>
+			<span class="text-red-800" id="usr_error"></span><br>
+			<input type="email" name="email" placeholder="Email" class="input-box" id="email_input" onchange="this.classList.remove('input-invalid');document.getElementById('email_error').innerHTML = ''" required><br>
+			<span class="text-red-800" id="email_error"></span><br>
+			<input type="password" name="password" placeholder="Password" class="input-box" id="pass_input" onchange="this.classList.remove('input-invalid');document.getElementById('pass_error').innerHTML = ''" required><br>
+			<span class="text-red-800" id="pass_error"></span><br>
+			<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid');document.getElementById('pass_error').innerHTML = ''" required><br>
+			<input type="submit" class="button" value="Register">
+			<br><br><span class="text-red-800" id="error"><% if (messages?.error) { %><%=messages.error %><% } %></span>
+		</form>
+	</div>
+	<div id="loading" class="hidden text-center">
+		<img src="/resources/spinner.webp"/>
+	</div>
+	<div id="verify_email" class="hidden">
+		<h1 class="text-center text-vwhite text-3xl">Verify your email address</h1>
+		<div class="mt-20p text-center text-vwhite space-y-5">
+			<p>We need to make sure you actually own that email address and that you aren't a robot!<br>Please enter the code we sent to your email address.<br>If it's not there, check your spam folder.</p>
+			<form id="verificationForm">
+				<input type="number" name="code" placeholder="your verification code" class="input-box" id="code_input" onchange="this.classList.remove('input-invalid');document.getElementById('code_error').innerHTML = ''" required><br>
+				<span class="text-red-800" id="code_error"></span><br>
+				<input type="submit" class="button" value="Verify">
+			</form>
+			<span class="text-gray-400" id="resendText" onclick="resend()">Resend code <span id="resendCounter"></span></span>
+		</div>
+	</div>
   </body>
   <script>
+	let resendCounter
+	let counter = 60
+	function resendC() {
+		clearInterval(resendCounter)
+		document.getElementById("resendCounter").innerHTML = "(60)"
+		counter = 60
+		resendCounter = setInterval(() => {
+			if (counter - 1 != 0) {
+				document.getElementById("resendCounter").innerHTML = "(" + (counter - 1).toString() + ")"
+				counter = counter - 1
+			} else {
+				clearInterval(resendCounter)
+				counter = 0
+				document.getElementById("resendCounter").innerHTML = ""
+				document.getElementById("resendText").classList.replace("text-gray-400", "text-blue-500")
+				document.getElementById("resendText").classList.add("cursor-pointer")
+				
+			}
+			
+		}, 1000)
+	}
+	function resend() {
+		if (counter != 0) return
+		document.getElementById("resendText").classList.remove("text-blue-500")
+		document.getElementById("resendText").classList.remove("cursor-pointer")
+		document.getElementById("resendText").classList.add("text-gray-500")
+		counter = 1
+		fetch('/login/register/resend').then(res => {
+			if (res.status != 200) {
+				document.getElementById("resendCounter").innerHTML = "Failed to resend code"
+			}
+		})
+	}
+	let currentStage = 1;
+	function nextTrack() {
+		document.querySelector(`#coolmusic${currentStage + 1}`).muted = false;
+		document.querySelector(`#coolmusic${currentStage}`).muted = true;
+		currentStage += 1;
+	}
+
 	let csrf = document.getElementById("csrf").value;
 	document.getElementById("registrationForm").onsubmit = (e) => {
-		document.getElementById("error").textContent = "";
         e.preventDefault()
+		document.getElementById("error").textContent = "";
 		if (document.getElementById("registrationForm").password.value != document.getElementById("registrationForm").password2.value) {
             document.getElementById("pass_input").classList.add("input-invalid");
             document.getElementById("pass_input2").classList.add("input-invalid");
             return document.getElementById("pass_error").textContent = "Passwords do not match"
         }
-		fetch('/login/register', {
+		document.getElementById('loading').classList.remove("hidden")
+		document.getElementById('register_info').classList.add("hidden")
+		fetch('/login/register/1', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -46,6 +111,9 @@
                switch(res.status) {
 					case 400:
 						res.json().then(json => {
+							
+							document.getElementById('loading').classList.add("hidden")
+							document.getElementById('register_info').classList.remove("hidden")
 							if(json.type == "username") {
                                 document.getElementById("usr_input").classList.add("input-invalid");
                                 return document.getElementById("usr_error").textContent = json.message;
@@ -64,25 +132,23 @@
 					   break;
 					case 500:
                         res.json().then(json => {
+							document.getElementById('loading').classList.add("hidden")
+							document.getElementById('register_info').classList.remove("hidden")
                             if(json.type == "error") return document.getElementById("error").textContent = json.message;
                             document.getElementById("error").textContent = "Server encountered an error, please try again later"
                         })
 						break;
 					case 200:
-						fetch('/login/password', {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json'
-							},
-							body: JSON.stringify({
-								_csrf: csrf,
-								username: document.getElementById("registrationForm").email.value,
-								password: document.getElementById("registrationForm").password.value
-							})
-						}).then(res => {
-							if (!res.status == 200) return document.getElementById("error").textContent = "Your account has been created, but we had an issue logging you in."
-							window.location.pathname = "/info"
-						});
+						document.getElementById('loading').classList.add("hidden")
+						document.getElementById('verify_email').classList.remove("hidden")
+						nextTrack();
+						console.log("success, saved to session")
+						resendC()
+					break;
+					case 429:
+						document.getElementById('loading').classList.add("hidden")
+						document.getElementById('register_info').classList.remove("hidden")
+						document.getElementById("error").textContent = "429 Too many requests, please try again later"
 					break;
 			   }
         });

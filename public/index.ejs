@@ -6,14 +6,15 @@
   </head>
   <body class="bg-gray-900">
     <%- include("./common/nav.ejs", {user: user}); %> 
+    <h1 class="text-center text-vwhite text-3xl"><b>LITauth</b></h1>
     <form action="/login/password" method="post" class="mt-20p text-center space-y-5">
-    <input type="hidden" name="_csrf" value="<%=csrfToken %>">
-    <input type="text" name="username" class="input-box" placeholder="Username"><br>
-    <input type="password" name="password" class="input-box" placeholder="Password"><br>
-    <input type="submit" class="button" value="Login"><br>
-    <a class="text-blue-500" href="/migrate">Migrating from Vukkybox account?</a><br>
-    <a class="text-blue-500" href="/register">Don't have an account?</a>
-    <% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
+      <input type="hidden" name="_csrf" value="<%=csrfToken %>">
+      <input type="text" name="username" class="input-box" placeholder="Username"><br>
+      <input type="password" name="password" class="input-box" placeholder="Password"><br>
+      <input type="submit" class="button" value="Login"><br>
+      <a class="text-blue-500" href="/migrate">Migrating from a Vukkybox account?</a><br>
+      <a class="text-blue-500" href="/register">Don't have an account?</a>
+      <% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
     </form>
   </body>
 </html>
