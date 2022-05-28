@@ -15,5 +15,5 @@ transporter.sendMail({
     from: '"LITauth" <litauth@litdevs.org>',
     bcc: "contact@litdevs.org",
     subject: "LITauth Account Verification",
-    html: fs.readFileSync("./verificationTemplate.html", "utf8").toString()
+    html: fs.readFileSync("./email/verification.html", "utf8").toString()
 });

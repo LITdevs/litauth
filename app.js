@@ -7,9 +7,17 @@ var express  = require('express')
   , crypto = require("crypto")
   , cookieParser = require('cookie-parser')
   , flash = require('express-flash')
-  , csrf = require("csurf");
+  , csrf = require("csurf")
+  , fs = require('fs')
+  , nodemailer = require("nodemailer");
 require("dotenv").config();
 const MongoDBStore = require("connect-mongodb-session")(session);
+
+// Check for email config
+let emailConfig = false
+if (fs.existsSync(`${__dirname}/emailConfig.json`)) {
+	emailConfig = require(`${__dirname}/emailConfig.json`)
+}
 
 // random globals land
 var store = new MongoDBStore({
@@ -50,6 +58,7 @@ app.use(function (err, req, res, next) {
 })
 app.use(function (req, res, next) {
 	if (/MSIE|Trident/.test(req.headers['user-agent'])) return res.render(`${__dirname}/public/error.ejs`, { stacktrace: null, friendlyError: "Your browser is no longer supported. Please <a href='https://browser-update.org/update-browser.html'>update your browser</a>." });
+	if(req.method == "GET" && !emailConfig && req.url != "/oobe/emailFinal" ) return res.render(`${__dirname}/public/emailConfig.ejs`, {csrfToken: req.csrfToken()});
 	//if (req.headers['user-agent'].indexOf('Safari') != -1 && req.headers['user-agent'].indexOf('Macintosh') == -1 && req.headers['user-agent'].indexOf('OPR') == -1 && req.headers['user-agent'].indexOf('Edge') == -1 && req.headers['user-agent'].indexOf('Chrome') == -1) return res.render(`${__dirname}/public/error.ejs`, { stacktrace: null, friendlyError: "Sorry, but iPhones and iPads are not currently supported, because Safari is terrible, and all web browsers there are Safari in a trench coat.<br>Please buy a good device, such as an Android phone, or even better... a computer!<br><br><img src='https://dokodemo.neocities.org/images/buttons/phonechump.gif'>" });
 	next()
 });
@@ -129,6 +138,80 @@ app.post("/login/register", (req, res) => {
 	})
 })
 
+let emailTestConfig
+app.post("/oobe/emailConfig", (req, res) => {
+	if (!req.body?.smtp_hostname || !req.body?.smtp_port || typeof req.body?.smtp_secure === "undefined" || !req.body?.email_sender || !req.body?.email_from) return res.status(400).send({type: "error", message: "Please fill out all fields"});
+	if (req.body?.smtp_password && !req.body?.smtp_username) return res.status(400).send({type: "error", message: "Please fill out all fields"});
+	res.sendStatus(200)
+	emailTestConfig = req.body
+})
+
+let emailTested = false
+app.post("/oobe/emailTest", (req, res) => {
+	if(!emailTestConfig) return res.status(400).send({type: "error", message: "Submit your email config first"})
+	if(!req.body.test_address) return res.status(400).send({type: "error", message: "Please fill out all fields"})
+	let mailerConfig = {
+		host: emailTestConfig.smtp_hostname,
+		port: emailTestConfig.smtp_port,
+		secure: emailTestConfig.smtp_secure
+	}
+	if(emailTestConfig?.smtp_username) mailerConfig.auth = { user: emailTestConfig.smtp_username }
+	if(emailTestConfig?.smtp_password) mailerConfig.auth.pass = emailTestConfig.smtp_password
+	let transporter = nodemailer.createTransport(mailerConfig);
+	transporter.verify(function (error, success) {
+		if (error) {
+			console.error(error);
+			res.send({type: "emailError", message: "Possibly invalid email config", error: error.message})
+		} else {
+			transporter.sendMail({
+				from: `"${emailTestConfig.email_sender}" <${emailTestConfig.email_from}>`,
+				to: req.body.test_address,
+				subject: "LITauth Email Test",
+				html: "<html><body>Congratulations! You've successfully configured your email settings!<br><br><a href='https://litdevs.org/vsite/laughskelly.mp3'>Enjoy your reward</a></body></html>"
+			}, (err, info) => {
+				if (err) {
+					console.error(err);
+					res.send({type: "emailError", message: "Possibly invalid email config", error: err, info})
+				} else {
+					if (info.accepted.includes(req.body.test_address)) {
+						emailTested = true
+						return res.send({type: "success", message: "Email test successful", info})
+					} else {
+						if (info.pending.includes(req.body.test_address)) {
+							emailTested = true
+							return res.send({type: "emailPending", message: "Email not accepted yet, it may have worked, or may have not.", error: JSON.stringify(info.pending), info})
+						}
+						if (info.rejected.includes(req.body.test_address)) {
+							return res.send({type: "emailRejected", message: "Email rejected by the destination server", info})
+						}
+						emailTested = true
+						res.send({type: "error", message: "Unknown error, if you received the email, continue to the next step", info})
+					}
+				}
+			})
+		}
+	});
+})
+
+app.get("/oobe/emailFinal", (req, res) => {
+	if(!emailTestConfig) return res.status(400).send({type: "error", message: "Successfully finish configuring the email settings first"})
+	let mailerConfig = {
+		host: emailTestConfig.smtp_hostname,
+		port: emailTestConfig.smtp_port,
+		secure: emailTestConfig.smtp_secure
+	}
+	if(emailTestConfig?.smtp_username) mailerConfig.auth = { user: emailTestConfig.smtp_username }
+	if(emailTestConfig?.smtp_password) mailerConfig.auth.pass = emailTestConfig.smtp_password
+	emailConfig = {
+		mailerConfig: {
+			...mailerConfig
+		},
+		sender: `"${emailTestConfig.email_sender}" <${emailTestConfig.email_from}>`
+	}
+	fs.writeFileSync(`${__dirname}/emailConfig.json`, JSON.stringify(emailConfig, null, 4))
+	res.sendStatus(200)
+})
+
 app.post('/login/password', passport.authenticate('local', {
 	successReturnToOrRedirect: '/info',
 	failureRedirect: '/',
@@ -161,7 +244,6 @@ app.get('*', function(req, res){
 	res.status(404).render(`${__dirname}/public/404.ejs`);
 });
 
-var fs = require('fs');
 var http = require('http');
 
 const httpServer = http.createServer(app);

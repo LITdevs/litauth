@@ -1,0 +1,143 @@
+<html>
+	<head>
+        <style>
+            html {
+                /*design*/
+                background-image: url("/resources/oobe/bg.png");
+                color: white;
+                font-family: sans-serif;
+            }
+            #email_info_form_data {
+                /* just throwing shit until it looks nice */
+                background-color: #494949;
+                display: inline-block;
+                padding: 10px;
+                padding-bottom: 20px;
+                border-radius: 25px;
+            }
+            #email_info_form h2, #email_info_form h3 {
+                margin-bottom: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>LITauth email settings</h1>
+        <div id="email_info">
+            <form id="email_info_form">
+                <input type="hidden" name="_csrf" value="<%=csrfToken%>">
+                <span id="email_info_form_data">
+                    <h2>Server information</h2>
+                    <label for="smtp_hostname">SMTP Server hostname: </label>
+                    <input type="text" name="smtp_hostname" placeholder="mail.example.com" required/>&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor: help;" onclick="alert('The hostname of your SMTP server, for example smtp.gmail.com (dont use gmail for this please)')"/><br> 
+                    <label for="smtp_port">SMTP Server port: </label>
+                    <input type="number" name="smtp_port" placeholder="25" required/>&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor:help;" onclick="alert('Probably 25, 465 or 587.')"/><br> 
+                    <label for="smtp_secure">Secure? </label>
+                    <input type="checkbox" name="smtp_secure"/>&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor:help;" onclick="alert('SSL/TLS')"/>
+                    <h3>Authentication</h3>
+                    <small>If your SMTP server does not require authentication, you can leave these fields blank.</small><br>
+                    <label for="smtp_username">Username: </label>
+                    <input type="text" name="smtp_username" placeholder="username"><br>
+                    <label for="smtp_password">Password: </label>
+                    <input type="password" name="smtp_password" placeholder="password">
+                    <h2>Email information</h2>
+                    <label for="email_sender">Email sender: </label>
+                    <input type="text" name="email_sender" placeholder="LITauth" required/>&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor:help;" onclick="alert('Appears as the name of the sender')"/><br>
+                    <label for="email_from">Email from: </label>
+                    <input type="text" name="email_from" placeholder="litauth@litdevs.org" required/>&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor:help;" onclick="alert('The address of the sender')"/>
+                </span>
+                <br><br><input type="submit" value="Next">&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor:help;" onclick="alert('Surely you understand what this is?')"/>
+            </form>
+        </div>
+        <div id="email_test" style="display: none">
+            <p>Time to test the settings! <img src="https://cdn.discordapp.com/emojis/407753928365572096.png" width="48"></p>
+			<form id="email_test_form">
+				<input type="hidden" name="_csrf" value="<%=csrfToken%>">
+                <input type="text" name="test_address" placeholder="skelly@litdevs.org" required/>&nbsp;<img src="/resources/oobe/help.png" style="width: 16px; cursor:help;" onclick="alert('The address you want to send the test email to')"/><br>
+				<input type="submit" value="Send test email">
+			</form>
+        </div>
+		<div id="email_test_result" style="display: none">
+			<span id="test_result"></span>
+			<br><br>
+			<a href="/"><button>Test failed? Start over</button></a>
+			<br>
+			<button onclick="finish()">I successfully received an email</button>
+		</div>
+		<div id="loading" style="display: none">
+			<p>AAahhh!! Help me!!<img src="/resources/oobe/loading.gif" width="48"></p>
+		</div>
+    </body>
+	<script>
+		document.getElementById("email_info_form").onsubmit = e => {
+			e.preventDefault();
+			let form = document.getElementById("email_info_form");
+			fetch("/oobe/emailConfig", {
+				method: "POST",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({
+					_csrf: form.elements["_csrf"].value,
+					smtp_hostname: form.elements["smtp_hostname"].value,
+					smtp_port: form.elements["smtp_port"].value,
+					smtp_secure: form.elements["smtp_secure"].checked,
+					smtp_username: form.elements["smtp_username"].value,
+					smtp_password: form.elements["smtp_password"].value,
+					email_sender: form.elements["email_sender"].value,
+					email_from: form.elements["email_from"].value
+				})
+			}).then(res => {
+				if (res.status == 200) {
+					document.getElementById("email_info").style.display = "none";
+					document.getElementById("email_test").style.display = "block";
+				} else {
+					alert("Error: " + res.status);
+				}
+			});
+			document.getElementById("email_info").style.display = "none";
+			document.getElementById("email_test").style.display = "";
+		}
+		document.getElementById("email_test_form").onsubmit = e => {
+			e.preventDefault();
+			document.getElementById("email_test").style.display = "none";
+			document.getElementById("loading").style.display = "";
+			let form = document.getElementById("email_test_form");
+			fetch("/oobe/emailTest", {
+				method: "POST",
+				headers: {"Content-Type": "application/json"},
+				body: JSON.stringify({
+					_csrf: form.elements["_csrf"].value,
+					test_address: form.elements["test_address"].value
+				})
+			}).then(res => res.json().then(res => {
+				document.getElementById("email_test_result").style.display = "";
+				document.getElementById("loading").style.display = "none";
+				switch(res.type) {
+					case "success":
+						new Audio("/resources/oobe/finish.wav").play();
+						document.getElementById("test_result").innerHTML = "Yaaay, it worked! <img src='https://cdn.discordapp.com/emojis/256952237757169664.png' width='48'>" + "<br><br>Email sent successfully! Check your inbox, if you see an email proceed to the next step.<br><br>I will now dump everything I know: <br> " + JSON.stringify(res.info)
+					break;
+					case "emailError":
+						new Audio("/resources/oobe/glitch1.wav").play();
+						document.getElementById("test_result").innerHTML = res.message + " <img src='https://cdn.discordapp.com/emojis/257187456825294865.png' width='48'><br><br>" + res.error + "<br><br>" + res.info
+					break;
+					default:
+						document.getElementById("test_result").innerHTML = res.message + "<br><br>" + res.info
+
+				}
+			}));
+		}
+		function finish() {
+			document.getElementById("email_test_result").style.display = "none";
+			document.getElementById("loading").style.display = "";
+			fetch("/oobe/emailFinal").then(res => res.text().then(resp => {
+				console.log("Final response: " + resp);
+				if (res.status == 200) return window.location.href = "/";
+				else {
+					alert("Error: " + res.status);
+					alert(resp)
+					alert("Starting over...")
+					window.location.href = "/";
+				}
+			}));
+		}
+	</script>
+</html>
