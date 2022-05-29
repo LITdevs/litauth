@@ -50,7 +50,18 @@ function createAccount(email, username, password, salt, cb) {
 				email: email,
 				username:username,
 				passwordHash:password,
-				salt:salt
+				salt:salt,
+				avatar: {
+					faceplate: 0,
+					color: "#00A8F3",
+					accessories: [
+						{
+							name: "key",
+							x: 0,
+							y: 0
+						}
+					]
+				}
 	})
 	user.save(function (err, user) {
 		if (err) {

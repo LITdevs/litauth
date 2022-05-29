@@ -108,7 +108,8 @@ app.get('/terms', function(req, res){
 
 app.get('/logout', function(req, res) {
 	req.logout();
-	res.send('you killed niko');
+	req.session.destroy();
+	res.send('you killed niko<script>setTimeout(() => {window.location.href = "/"}, 2500)</script>');
 });
 
 /*app.post("/login/register", (req, res) => {
@@ -182,7 +183,7 @@ app.post("/login/register/1", (req, res) => {
 					req.session.passwordHash = pwd
 					req.session.salt = salt
 					req.session.resend = false
-					req.session.emailCode = ~~(Math.random() * 10 ** 6)
+					req.session.emailCode = parseInt(Math.random().toString().substring(2,8))
 					req.session.save(err => {
 						if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
 						let transporter = nodemailer.createTransport(emailConfig.mailerConfig);
@@ -221,6 +222,50 @@ app.get("/login/register/resend", (req, res) => {
 		req.session.save()
 		res.sendStatus(200) // TODO: Check if there was an error sending the email, as this assumes everything is fine.
 	})
+})
+
+let verifyRatelimit = rateLimit({
+	windowMs: 60 * 1000, // 1 minute
+	max: 3, // limit each IP to 1 requests per windowMs
+	message: "Too many requests, please try again later",
+	keyGenerator: function (req /*, res*/) {
+		return req.headers["cf-connecting-ip"];
+	},
+})
+
+app.post("/login/register/2", (req, res) => {
+	if (!req.session.emailCode || !req.session.username) return res.status(400).send({type: "error", message: "Registration is not in progress"});
+	if (!req.body.verificationCode) return res.status(400).send({type: "error", message: "Please enter a verification code"});
+	if (req.session.verifyTries >= 3) return res.status(403).send({type: "verificationLimit", message: "Too many verification attempts"});
+	verifyRatelimit(req, res, () => {
+		if (req.body.verificationCode != req.session.emailCode) {
+			if (!req.session.verifyTries) req.session.verifyTries = 1
+			else req.session.verifyTries += 1
+			req.session.save()
+			if (req.session.verifyTries == 3) return res.status(403).send({type: "verificationLimit", message: "Too many verification attempts"});
+			return res.status(400).send({type: "verificationWrong", message: "Verification code is incorrect"});
+		} else {
+			db.createAccount(req.session.email, req.session.username, req.session.passwordHash, req.session.salt, resp => {
+				if(resp.error) {
+					console.error(resp.error);
+					req.session.destroy((err) => {
+						return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+					})
+				} else {
+					req.session.destroy(err => {
+						if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+						res.sendStatus(200)
+					})
+
+				}
+			})
+		}
+	})
+})
+
+app.get("/designer", checkAuth, (req, res) => {
+	let user = req.user._id ? req.user : req.user[0]
+	res.render(`${__dirname}/public/designer.ejs`, {user, csrfToken: req.csrfToken()});
 })
 
 app.post('/login/password', passport.authenticate('local', {

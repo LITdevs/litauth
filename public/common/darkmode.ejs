@@ -20,14 +20,14 @@ function toggleTheme() {
     	document.documentElement.classList.remove('dark')
 		document.querySelector(".themeSwitch").classList.add("fa-moon")
 		document.querySelector(".themeSwitch").classList.remove("fa-sun")
-		document.querySelectorAll(".bg-wlight-dark").forEach(e => { e.classList.remove("bg-wlight-dark"); e.classList.add("bg-wlight") })
+		document.querySelectorAll(".bg-wlight-dark").forEach(e => { if(!e.classList.contains("dmi")) e.classList.remove("bg-wlight-dark"); if(!e.classList.contains("dmi")) e.classList.add("bg-wlight") })
 
 	} else {
 		localStorage.theme = 'dark'
     	document.documentElement.classList.add('dark')
 		document.querySelector(".themeSwitch").classList.add("fa-sun")
 		document.querySelector(".themeSwitch").classList.remove("fa-moon")
-		document.querySelectorAll(".bg-wlight").forEach(e => { e.classList.remove("bg-wlight"); e.classList.add("bg-wlight-dark") })
+		document.querySelectorAll(".bg-wlight").forEach(e => {  if(!e.classList.contains("dmi")) e.classList.remove("bg-wlight");  if(!e.classList.contains("dmi")) e.classList.add("bg-wlight-dark") })
 	}
 }
 </script>

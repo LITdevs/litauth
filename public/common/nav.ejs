@@ -1,20 +1,20 @@
-<div class="bg-vwhite dark:bg-vgray text-vgray dark:text-vwhite w-full h-12 mb-5 flex">
+<div class="bg-vwhite dark:bg-vgray bg-gradient-to-r from-[#00A8F3] to-blue-600 shadow-lg text-vwhite w-full h-12 mb-5 flex">
     <div class="float-left inline-flex">
         <img src="/resources/litauth.png" class="h-10"><span class="align-middle">LITauth</span>
     </div>
-    <div id="themeSwitch" class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-md my-auto ml-auto mr-2 inline-flex p-2 cursor-pointer" onclick="toggleTheme()">
+    <div id="themeSwitch" class="hover:bg-wlight-dark rounded-md my-auto ml-auto mr-2 inline-flex p-2 cursor-pointer" onclick="toggleTheme()">
         <i title="Toggle darkmode" class="themeSwitch fa-solid"></i>
     </div>
     <% if (user) { %>
-        <div id="ubutton" class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-md w-40 my-auto mr-2 inline-flex p-2 cursor-pointer" onclick="udropdown(false)">
+        <div id="ubutton" class="dmi hover:bg-wlight-dark rounded-md w-40 my-auto mr-2 inline-flex p-2 cursor-pointer" onclick="udropdown(false)">
             <p class="inline truncate" title="<%=user.username%>"><%=user.username%></p><i class="fa-solid fa-angle-down inline my-auto ml-auto"></i>
-            <div id="ucontent" class="dropdown-content hidden w-40 absolute right-2 z-[60] top-12 bg-vwhite text-vgray dark:bg-vgray dark:text-vwhite rounded-b-lg cursor-auto shadow-xl" onclick="event.stopPropagation();">
-                <a href="/profile"><div class="hover:bg-wlight dark:hover:bg-wlight-dark py-4 px-2"><p>My profile</p></div></a>
-                <a href="/logout"><div class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-b-lg py-4 px-2"><p>Logout</p></div></a>
+            <div id="ucontent" class="dropdown-content hidden w-40 absolute right-2 z-[60] top-12 bg-vgray dark:bg-vwhite text-vwhite dark:text-vgray rounded-b-lg cursor-auto shadow-xl" onclick="event.stopPropagation();">
+                <a href="/profile"><div class="hover:bg-wlight-dark dark:hover:bg-wlight py-4 px-2"><p>My profile</p></div></a>
+                <a href="/logout"><div class="hover:bg-wlight-dark dark:hover:bg-wlight rounded-b-lg py-4 px-2"><p>Logout</p></div></a>
             </div>
         </div>
     <% } else { %>
-        <div id="ubutton" class="hover:bg-wlight dark:hover:bg-wlight-dark rounded-md my-auto mr-2 inline-flex p-2">
+        <div id="ubutton" class="hover:bg-wlight-dark rounded-md my-auto mr-2 inline-flex p-2">
             <a href="/"><div>
                 <p class="inline truncate" title="Login">Login</p>&nbsp;&nbsp;<i class="fa-solid fa-key inline my-auto ml-auto"></i>
             </div></a>
@@ -30,7 +30,8 @@
         if (forceClose) udropdownState = false;
         if (udropdownState) {
             document.querySelector("#ucontent").classList.remove("hidden");
-            document.querySelector("#ubutton").classList.add(`bg-wlight${localStorage.theme == "dark" ? "-dark" : ""}`);
+            //document.querySelector("#ubutton").classList.add(`bg-wlight${localStorage.theme == "dark" ? "-dark" : ""}`);
+            document.querySelector("#ubutton").classList.add(`bg-wlight-dark`);
         } else {
             document.querySelector("#ucontent").classList.add("hidden");
             document.querySelector("#ubutton").classList.remove("bg-wlight");

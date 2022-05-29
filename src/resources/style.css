@@ -21,3 +21,7 @@
 .input-invalid {
     box-shadow: 0 0 0 3px rgba(255,0,0,.75);
 }
+
+.vbg {
+    background-image: url("/resources/bg.png");
+}

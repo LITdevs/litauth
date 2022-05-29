@@ -7,7 +7,7 @@
 	<link rel="preload" href="/resources/signup_3.mp3" as="audio">
     <%- include('./common/darkmode.ejs') %>
   </head>
-  <body class="bg-gray-900">
+  <body class="bg-gray-900 vbg">
 	<audio id="coolmusic1" autoplay loop src="/resources/signup_1.mp3"></audio>
 	<audio id="coolmusic2" autoplay muted loop src="/resources/signup_2.mp3"></audio>
 	<audio id="coolmusic3" autoplay muted loop src="/resources/signup_3.mp3"></audio>
@@ -40,6 +40,13 @@
 				<input type="submit" class="button" value="Verify">
 			</form>
 			<span class="text-gray-400" id="resendText" onclick="resend()">Resend code <span id="resendCounter"></span></span>
+		</div>
+	</div>
+	<div id="completed" class="hidden">
+		<h1 class="text-center text-vwhite text-3xl">Registration complete!</h1>
+		<div class="mt-20p text-center text-vwhite space-y-5">
+			<p>You have successfully lorem ipsum blah blah go design a vukky</p>
+			<a href="/designer" class="button">Go</a>
 		</div>
 	</div>
   </body>
@@ -152,6 +159,62 @@
 					break;
 			   }
         });
+	}
+	document.getElementById("verificationForm").onsubmit = e => {
+		e.preventDefault()
+		document.getElementById("verify_email").classList.add("hidden")
+		document.getElementById("loading").classList.remove("hidden")
+		if (document.getElementById("code_input").value.length != 6) {
+			document.getElementById("code_input").classList.add("input-invalid");
+			return document.getElementById("code_error").textContent = "Code must be 6 digits"
+		}
+		fetch('/login/register/2', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    _csrf: csrf,
+					verificationCode: document.getElementById("code_input").value
+                })
+            }).then(res => {
+				switch (res.status) {
+					case 200:
+						// account created, session destroyed.
+						fetch("/login/password", {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify({
+								_csrf: csrf,
+								username: document.getElementById("registrationForm").email.value,
+								password: document.getElementById("registrationForm").password.value
+							})
+						}).then(res => {
+							nextTrack()
+							document.getElementById('loading').classList.add("hidden")
+							document.getElementById('completed').classList.remove("hidden")
+						})
+					break;
+					case 400:
+						res.json().then(json => {
+							document.getElementById('loading').classList.add("hidden")
+							document.getElementById('verify_email').classList.remove("hidden")
+							if(json.type == "verificationWrong" || json.type == "verificationLimit" || json.type == "error") {
+								document.getElementById("code_input").classList.add("input-invalid");
+								return document.getElementById("code_error").textContent = json.message;
+							}
+							document.getElementById("code_error").textContent = "ERR_USER_FAULT_400; contact@litdevs.org";
+						})
+					break;
+					case 500:
+						document.getElementById('loading').classList.add("hidden")
+						document.getElementById('verify_email').classList.remove("hidden")
+						document.getElementById("code_error").textContent = "Server encountered an error, please try again later"
+					break;
+				}
+			})
 	}
   </script>
 </html>
