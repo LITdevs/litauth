@@ -159,7 +159,7 @@ app.post("/login/register/1", (req, res) => {
 	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
 	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
 	let usernameRegex = /[^a-zA-Z0-9\-_.,]/
-	if(usernameRegex.test(req.body.username)) return res.status(400).send({type: "username", message: "Username must match /[^a-zA-Z0-9\-_.,]/"});
+	if(usernameRegex.test(req.body.username)) return res.status(400).send({type: "username", message: "Username must not match /[^a-zA-Z0-9\-_.,]/"});
 	
 	db.checkEmail(req.body.email, resp => {
 		if (resp) {
@@ -218,7 +218,7 @@ app.get("/login/register/resend", (req, res) => {
 	}).then(info => {
 		req.session.resend = true
 		req.session.save()
-		res.sendStatus(200)
+		res.sendStatus(200) // TODO: Check if there was an error sending the email, as this assumes everything is fine.
 	})
 })
 
@@ -261,6 +261,7 @@ const httpServer = http.createServer(app);
 httpServer.listen(87, () => {
 	console.log('HTTP Server running on port 87');
 });
+
 
 function setEmailConfig(emailConf) {
 	emailConfig = emailConf
