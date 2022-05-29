@@ -14,6 +14,8 @@ var express  = require('express')
 require("dotenv").config();
 const MongoDBStore = require("connect-mongodb-session")(session);
 
+var oobe = require('./routes/oobe');
+
 // Check for email config
 let emailConfig = false
 if (fs.existsSync(`${__dirname}/emailConfig.json`)) {
@@ -47,6 +49,7 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 app.use("/resources", express.static('public/resources'))
+app.use("/oobe", oobe);
 app.use(express.urlencoded({extended:true}));
 app.use(express.json())
 app.use(cookieParser())
@@ -332,3 +335,12 @@ const httpServer = http.createServer(app);
 httpServer.listen(87, () => {
 	console.log('HTTP Server running on port 87');
 });
+
+function setEmailConfig(emailConf) {
+	emailConfig = emailConf
+	fs.writeFileSync(`${__dirname}/emailConfig.json`, JSON.stringify(emailConfig, null, 4))
+}
+
+module.exports = {
+	setEmailConfig
+}
