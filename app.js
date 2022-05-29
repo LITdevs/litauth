@@ -49,7 +49,6 @@ app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 app.use("/resources", express.static('public/resources'))
-app.use("/oobe", oobe);
 app.use(express.urlencoded({extended:true}));
 app.use(express.json())
 app.use(cookieParser())
@@ -73,6 +72,7 @@ app.use(function (err, req, res, next) {
 	} // TODO: make it use flash messages
 	res.status(500).render(`${__dirname}/public/error.ejs`, { stacktrace: err.stack, friendlyError: null });
 });
+app.use("/oobe", oobe);
 
 passport.use(new LocalStrategy(function verify(username, password, cb) {
 	db.login(username, function(err, data) {
@@ -220,80 +220,6 @@ app.get("/login/register/resend", (req, res) => {
 		req.session.save()
 		res.sendStatus(200)
 	})
-})
-
-let emailTestConfig
-app.post("/oobe/emailConfig", (req, res) => {
-	if (!req.body?.smtp_hostname || !req.body?.smtp_port || typeof req.body?.smtp_secure === "undefined" || !req.body?.email_sender || !req.body?.email_from) return res.status(400).send({type: "error", message: "Please fill out all fields"});
-	if (req.body?.smtp_password && !req.body?.smtp_username) return res.status(400).send({type: "error", message: "Please fill out all fields"});
-	res.sendStatus(200)
-	emailTestConfig = req.body
-})
-
-let emailTested = false
-app.post("/oobe/emailTest", (req, res) => {
-	if(!emailTestConfig) return res.status(400).send({type: "error", message: "Submit your email config first"})
-	if(!req.body.test_address) return res.status(400).send({type: "error", message: "Please fill out all fields"})
-	let mailerConfig = {
-		host: emailTestConfig.smtp_hostname,
-		port: emailTestConfig.smtp_port,
-		secure: emailTestConfig.smtp_secure
-	}
-	if(emailTestConfig?.smtp_username) mailerConfig.auth = { user: emailTestConfig.smtp_username }
-	if(emailTestConfig?.smtp_password) mailerConfig.auth.pass = emailTestConfig.smtp_password
-	let transporter = nodemailer.createTransport(mailerConfig);
-	transporter.verify(function (error, success) {
-		if (error) {
-			console.error(error);
-			res.send({type: "emailError", message: "Possibly invalid email config", error: error.message})
-		} else {
-			transporter.sendMail({
-				from: `"${emailTestConfig.email_sender}" <${emailTestConfig.email_from}>`,
-				to: req.body.test_address,
-				subject: "LITauth Email Test",
-				html: "<html><body>Congratulations! You've successfully configured your email settings!<br><br><a href='https://litdevs.org/vsite/laughskelly.mp3'>Enjoy your reward</a></body></html>"
-			}, (err, info) => {
-				if (err) {
-					console.error(err);
-					res.send({type: "emailError", message: "Possibly invalid email config", error: err, info})
-				} else {
-					if (info.accepted.includes(req.body.test_address)) {
-						emailTested = true
-						return res.send({type: "success", message: "Email test successful", info})
-					} else {
-						if (info.pending.includes(req.body.test_address)) {
-							emailTested = true
-							return res.send({type: "emailPending", message: "Email not accepted yet, it may have worked, or may have not.", error: JSON.stringify(info.pending), info})
-						}
-						if (info.rejected.includes(req.body.test_address)) {
-							return res.send({type: "emailRejected", message: "Email rejected by the destination server", info})
-						}
-						emailTested = true
-						res.send({type: "error", message: "Unknown error, if you received the email, continue to the next step", info})
-					}
-				}
-			})
-		}
-	});
-})
-
-app.get("/oobe/emailFinal", (req, res) => {
-	if(!emailTestConfig) return res.status(400).send({type: "error", message: "Successfully finish configuring the email settings first"})
-	let mailerConfig = {
-		host: emailTestConfig.smtp_hostname,
-		port: emailTestConfig.smtp_port,
-		secure: emailTestConfig.smtp_secure
-	}
-	if(emailTestConfig?.smtp_username) mailerConfig.auth = { user: emailTestConfig.smtp_username }
-	if(emailTestConfig?.smtp_password) mailerConfig.auth.pass = emailTestConfig.smtp_password
-	emailConfig = {
-		mailerConfig: {
-			...mailerConfig
-		},
-		sender: `"${emailTestConfig.email_sender}" <${emailTestConfig.email_from}>`
-	}
-	fs.writeFileSync(`${__dirname}/emailConfig.json`, JSON.stringify(emailConfig, null, 4))
-	res.sendStatus(200)
 })
 
 app.post('/login/password', passport.authenticate('local', {
