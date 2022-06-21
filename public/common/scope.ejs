@@ -2,13 +2,13 @@
     <p class="text-green-500 font-bold text-center"><%
     switch(scope) {
         case 'identify':%>
-            See your username, avatar and account ID.
+            <br>- See your username, avatar and account ID.
         <% break;
         case 'email':%>
-            <br>See your email address.
+            <br>- See your email address.
         <% break;
         default:%>
-            <br>See your <%=scope%>
+            <br>- See your <%=scope%>
         <% break;
     }
     %></p>

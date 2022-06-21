@@ -10,7 +10,8 @@
     <div class="flex justify-center">
         <div class="p-5 max-w-screen-md rounded-xl bg-wdark shadow-lg">
             <h1 class="text-center text-vwhite text-3xl"><b><%=app.name %></b> wants to authorize with LITauth</h1>
-            <p class="text-center text-vwhite">App created by <%=author.username%></p><br><br>
+            <p class="text-center text-vwhite">App created by <%=author.username%></p><br>
+            <p class="text-center text-vwhite font-bold">It can:</p>
             <%
                 scopes.forEach(scope => {
                     %><%- include(`${dirname}/public/common/scope.ejs`, {scope: scope}) %><%
