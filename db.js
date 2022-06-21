@@ -1,12 +1,16 @@
 const mongoose = require('mongoose');
 require("dotenv").config();
-mongoose.connect(process.env.MONGODB_HOST);
+const crypto = require('crypto');
 //const nodemailer = require("nodemailer");
 
-const db = mongoose.connection;
+const db = mongoose.createConnection(process.env.MONGODB_HOST);
+const tokendb = mongoose.createConnection(process.env.MONGODB_OAUTH_HOST);
 db.on('error', console.error.bind(console, 'connection error:'));
+tokendb.on('error', console.error.bind(console, 'connection error:'));
 var User
+var Token
 var Code
+var Application
 db.once('open', function() {
 	const userSchema = new mongoose.Schema({
 	username: {type: String, unique : true},
@@ -14,29 +18,38 @@ db.once('open', function() {
 	email: {type: String, unique : true},
 	salt: Buffer
 	});
-	User = mongoose.model('User', userSchema);
-});
-/*let transporter = nodemailer.createTransport({
-		host: "smtp.zoho.eu",
-		port: 465,
-		secure: true,
-		auth: {
-			user: "vukkybox@litdevs.org",
-			pass: process.env.EMAIL_PASS,
-		},
+	User = db.model('User', userSchema);
+	const codeSchema = new mongoose.Schema({
+		code: String,
+		userId: String,
+		scopes: Array,
+		expires: Date,
+		redirectUri: String,
+		clientId: String
+	})
+	Code = db.model('Code', codeSchema);
+	const applicationSchema = new mongoose.Schema({
+		clientId: String,
+		clientSecret: String,
+		ownedBy: String,
+		scopesAllowed: Array,
+		redirectUris: Array,
+		name: String,
+		description: String
 	});
+	Application = db.model('Application', applicationSchema);
+});
 
-async function sendEmail(user, emailContent, emailSubject) {
-	let parsedEmailContent = emailContent.replaceAll("$username", user.username)
-	if(user.emailCode) parsedEmailContent = parsedEmailContent.replaceAll("$emailRecoveryCode", user.emailCode)
-	let info = await transporter.sendMail({
-		from: '"Vukkybox" <vukkybox@litdevs.org>',
-		to: user.primaryEmail,
-		subject: emailSubject,
-		html: parsedEmailContent
-		});
-}
-*/
+tokendb.once('open', function() {
+	const tokenSchema = new mongoose.Schema({
+		token: {type: String, unique: true},
+		user: String,
+		client_id: String,
+		scopes: Array,
+		expires: Date
+	})
+	Token = tokendb.model('Token', tokenSchema);
+})
 
 function login(email, callback) {
 	User.findOne({email: email.toLowerCase()}, function (err, user) {
@@ -94,9 +107,99 @@ function checkName(username, cb) {
 	})
 }
 
+function checkAccessToken(token, requestedScopes, cb) { //cb error, state, user
+	Token.findOne({token:token}, (err, tokenDoc) => {
+		if (err) return cb(err, null, null)
+		if(!tokenDoc) return cb(null, "invalid", null)
+		User.findOne({_id: tokenDoc.user}, (err, user) => {
+			if (err) return cb(err, null, null)
+			if(!user) return cb(null, "invalid", null)
+			let scopesAllowed = true
+			for(let i = 0; i < requestedScopes.length; i++) {
+				if(!tokenDoc.scopes.includes(requestedScopes[i])) {
+					scopesAllowed = false
+					break
+				}
+			}
+			if (!scopesAllowed) return cb(null, "disallowed", null)
+			if(tokenDoc.expires < new Date()) {
+				cb(null, "expired", null)
+				return Token.deleteOne({token:token}, (err) => {
+					if (err) console.error(err)
+				});
+			}
+			return cb(null, null, user)
+		})
+	})
+}
+
+function createAccessToken(clientId, user, scopes, cb) {
+	let accessToken = crypto.randomBytes(32).toString("hex");
+	let token = new Token({
+		token: accessToken,
+		client_id: clientId,
+		scopes: scopes,
+		expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+		user: user._id
+	})
+	token.save((err, token) => {
+		if (err) return cb(err, null)
+		return cb(null, accessToken)
+	})
+}
+
+function getUser(userId, cb) {
+	User.findOne({_id:userId}, (err, user) => {
+		if (err) return cb(err, null)
+		return cb(null, user)
+	})
+}
+
+function getApplication(clientId, cb) {
+	Application.findOne({clientId:clientId}, (err, app) => {
+		if (err) return cb(err, null)
+		return cb(null, app)
+	})
+}
+
+function getCodeInformation(code, cb) {
+	Code.findOne({code:code}, (err, code) => {
+		if (err) return cb(err, null)
+		return cb(null, code)
+	})
+}
+
+function deleteCode(id) {
+	Code.deleteOne({_id:id}, (err) => {
+		if (err) console.error(err)
+	});
+}
+
+function createCode(clientId, userId, scopes, redirectUri, cb) {
+	let code = new Code({
+		code: crypto.randomBytes(16).toString("hex"),
+		userId: userId,
+		scopes: scopes,
+		expires: new Date(Date.now() + 10 * 60 * 1000),
+		redirectUri: redirectUri,
+		clientId: clientId 
+	})
+	code.save((err, savedCode) => {
+		if (err) return cb(err, null);
+		return cb (null, savedCode);
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
 	checkName,
-	createAccount
+	createAccount,
+	checkAccessToken,
+	createAccessToken,
+	getUser,
+	getApplication,
+	getCodeInformation,
+	deleteCode,
+	createCode
 }

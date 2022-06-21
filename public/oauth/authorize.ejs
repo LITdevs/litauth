@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LITauth - Login</title>
+    <%- include(`${dirname}/public/common/darkmode.ejs`) %>
+  </head>
+  <body class="bg-gray-900 vbg">
+    <!-- {user: req.user, csrfToken: req.csrfToken(), app, scopes, author} -->
+    <%- include(`${dirname}/public/common/nav.ejs`, {user: user}); %>
+    <div class="flex justify-center">
+        <div class="p-5 max-w-screen-md rounded-xl bg-wdark shadow-lg">
+            <h1 class="text-center text-vwhite text-3xl"><b><%=app.name %></b> wants to authorize with LITauth</h1>
+            <p class="text-center text-vwhite">App created by <%=author.username%></p><br><br>
+            <%
+                scopes.forEach(scope => {
+                    %><%- include(`${dirname}/public/common/scope.ejs`, {scope: scope}) %><%
+                })
+            %>
+            <br><br>
+            <div class="flex justify-between">
+                <button class="button-red">No stop wtf</button>
+                <form method="post">
+                    <input type="hidden" name="_csrf" value="<%=csrfToken %>">
+                    <input type="submit" class="button-green" value="I APPROVE!!"/>
+                </form>
+            </div>
+        </div>
+    </div>
+  </body>
+</html>

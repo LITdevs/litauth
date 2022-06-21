@@ -10,6 +10,14 @@
     @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-vwhite bg-wdark dark:text-wdark dark:bg-vwhite dark:hover:bg-vukky dark:hover:text-vwhite hover:bg-vukky hover:text-vwhite;
 }
 
+.button-green {
+    @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-[#278627] bg-vwhite hover:bg-[#278627] hover:text-vwhite;
+}
+
+.button-red {
+    @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-wdark bg-vwhite hover:bg-[#cc2535] hover:text-vwhite;
+}
+
 .input-box {
     @apply shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none;
 }

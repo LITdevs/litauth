@@ -55,6 +55,7 @@ app.use(cookieParser())
 app.use(csrf({cookie: true, sessionKey: process.env.SESSION_SECRET}))
 app.use(function (err, req, res, next) {
 	if (err.code !== 'EBADCSRFTOKEN') return next(err)
+	if (req.url.startsWith("/api")) return next()
 	let csrfWhitelist = []
 	if(!csrfWhitelist.includes(req.url)) return res.send("Couldn't verify Cross Site Request Forgery prevention")
 	if(csrfWhitelist.includes(req.url)) return next()
@@ -269,10 +270,11 @@ app.get("/designer", checkAuth, (req, res) => {
 })
 
 app.post('/login/password', passport.authenticate('local', {
-	successReturnToOrRedirect: '/info',
 	failureRedirect: '/',
 	failureFlash: true
-}));
+}), (req, res) => {
+	res.redirect(req.session.redirectTo ? req.session.redirectTo : '/info');
+});
 
 app.get('/register', (req, res) => {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
@@ -280,7 +282,95 @@ app.get('/register', (req, res) => {
 })
 
 app.get('/info', checkAuth, (req, res) => {
-	res.send(JSON.stringify(req.user));
+	res.send(JSON.stringify(req.user))
+})
+
+app.get('/oauth/authorize', checkAuth, (req, res) => {
+	if (!req.query.client_id) return res.status(400).send({type: "error", message: "Missing client_id"});
+	if (!req.query.redirect_uri) return res.status(400).send({type: "error", message: "Missing redirect_uri"});
+	if (!req.query.scope) return res.status(400).send({type: "error", message: "Missing scope"});
+	db.getApplication(req.query.client_id, (err, app) => {
+		if(err) return res.status(500).send({type: "error", message: "Internal server error"});
+		if(!app.redirectUris.includes(req.query.redirect_uri)) return res.status(400).send({type: "error", message: "Invalid redirect_uri"});
+		let scopes = req.query.scope.split(" ")
+		let scopesValid = true
+		for(let i = 0; i < scopes.length; i++) {
+			if(!app.scopesAllowed.includes(scopes[i])) {
+				scopesValid = false
+				break
+			}
+		}
+		if(!scopesValid) return res.status(400).send({type: "error", message: "Scope invalid or not allowed for application"});
+		db.getUser(app.ownedBy, (err, author) => {
+			res.render(`${__dirname}/public/oauth/authorize.ejs`, {dirname: __dirname, user: req.user, csrfToken: req.csrfToken(), app, scopes, author});
+		});
+	})
+})
+
+app.post('/oauth/authorize', checkAuth, (req, res) => {
+	if (!req.query.client_id) return res.status(400).send({type: "error", message: "Missing client_id"});
+	if (!req.query.redirect_uri) return res.status(400).send({type: "error", message: "Missing redirect_uri"});
+	if (!req.query.scope) return res.status(400).send({type: "error", message: "Missing scope"});
+	db.getApplication(req.query.client_id, (err, app) => {
+		if(err) return res.status(500).send({type: "error", message: "Internal server error"});
+		if(!app.redirectUris.includes(req.query.redirect_uri)) return res.status(400).send({type: "error", message: "Invalid redirect_uri"});
+		let scopes = req.query.scope.split(" ")
+		let scopesValid = true
+		for(let i = 0; i < scopes.length; i++) {
+			if(!app.scopesAllowed.includes(scopes[i])) {
+				scopesValid = false
+				break
+			}
+		}
+		if(!scopesValid) return res.status(400).send({type: "error", message: "Scope invalid or not allowed for application"});
+		db.createCode(req.query.client_id, req.user._id, scopes, req.query.redirect_uri, (err, code) => {
+			if(err) return res.status(500).send({type: "error", message: "Internal server error"});
+			res.redirect(`${req.query.redirect_uri}?code=${code.code}`);
+		})
+	})
+})
+
+app.post('/api/oauth2/token', (req, res) => {
+	// various code for making sure all the data is there
+	if (!req.is("application/x-www-form-urlencoded")) return res.status(400).send({type: "error", message: "Invalid request"});
+	if (!req.body.grant_type || !req.body.code || !req.body.redirect_uri) return res.status(400).send({type: "error", message: "Invalid request"});
+	if (req.body.grant_type != "authorization_code") return res.status(400).send({type: "error", message: "Unsupported grant type"});
+	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send('invalid token type');
+	if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
+	let clientId = req.body.client_id;
+	let clientSecret = req.body.client_secret;
+	if(req.headers.authorization) {
+		let decoded = Buffer.from(req.headers.authorization.split(" ")[1], 'base64').toString('utf-8')
+		decoded = decoded.split(":")
+		clientId = decoded[0]
+		clientSecret = decoded[1]
+	}
+	// trim whitespace because whitespace is stupid
+	clientId = clientId.trim()
+	clientSecret = clientSecret.trim()
+	let code = req.body.code.trim();
+	let redirectUri = req.body.redirect_uri.trim();
+	db.getCodeInformation(code, (err, codeInfo) => {
+		if (err) return res.status(500).send({type: "error", message: "internal server error"});
+		if (!codeInfo) return res.status(400).send({type: "error", message: "invalid code"});
+		if (codeInfo.clientId != clientId) return res.status(400).send({type: "error", message: "invalid client id1"});
+		if (codeInfo.expires < new Date()) return res.status(400).send({type: "error", message: "invalid code"});
+		if (codeInfo.redirectUri != redirectUri) return res.status(400).send({type: "error", message: "invalid redirect uri"});
+		db.getApplication(clientId, (err, app) => {
+			if (err) return res.status(500).send({type: "error", message: "internal server error"});
+			if (!app) return res.status(400).send({type: "error", message: "invalid client id"});
+			if (app.clientSecret != clientSecret) return res.status(400).send({type: "error", message: "invalid client secret"});
+			db.getUser(codeInfo.userId, (err, user) => {
+				if (err) return res.status(500).send({type: "error", message: "internal server error"});
+				if (!user) return res.status(400).send({type: "error", message: "invalid code"});
+				db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
+					if (err) return res.status(500).send({type: "error", message: "internal server error"});
+					db.deleteCode(codeInfo._id);
+					res.send(token)
+				})
+			})
+		})
+	})
 })
 
 function checkAuth(req, res, next) {
@@ -290,6 +380,47 @@ function checkAuth(req, res, next) {
 	req.session.redirectTo = req.path;
 	res.redirect(`/`)
 }
+
+function getRequestScope(req) {
+	let scopeJson = JSON.parse(fs.readFileSync(`${__dirname}/public/scopes.json`).toString());
+	let url = req.url.split("/api")[1].split("?")[0];
+	let scope = scopeJson[url];
+	if(!scope) return null;
+	return scope;
+}
+
+function accessTokenAuth(req, res, next) {
+	try {
+		if(!req.headers.authorization) return res.status(403).send('no token');
+		if(!req.headers.authorization.trim().startsWith("Bearer")) return res.status(403).send('invalid token type');
+		let token = req.headers.authorization.trim().split(" ")[1];
+		if (!token || token.length < 16) return res.status(403).send('no token');
+		db.checkAccessToken(token, getRequestScope(req), (err, state, user) => {
+			if(err) return res.status(500).send('internal server error');
+			if(state == "invalid") return res.status(403).send('invalid token');
+			if(state == "expired") return res.status(403).send('token expired');
+			if(state == "disallowed") return res.status(403).send('out of scope');
+			if(!user) return res.status(403).send('invalid token');
+			req.user = user;
+			next();
+		})
+	} catch(e) {
+		console.error(e);
+		res.status(500).send('internal server error');
+	}
+}
+/* //////////////////////////////////
+	Public API
+   ////////////////////////////////// */
+app.get('/api/user', accessTokenAuth, (req, res) => {
+	res.contentType('application/json');
+	res.send({username: req.user.username, _id: req.user._id});
+})
+
+app.get('/api/user/email', accessTokenAuth, (req, res) => {
+	res.contentType('application/json');
+	res.send({username: req.user.username, _id: req.user._id, email: req.user.email});
+})
 
 app.get('/.well-known/security.txt', function (req, res) {
     res.type('text/plain');
@@ -304,8 +435,8 @@ var http = require('http');
 
 const httpServer = http.createServer(app);
 
-httpServer.listen(87, () => {
-	console.log('HTTP Server running on port 87');
+httpServer.listen(93, () => {
+	console.log('HTTP Server running on port 93');
 });
 
 

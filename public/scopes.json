@@ -1,0 +1,4 @@
+{
+    "/user": ["identify"],
+    "/user/email": ["identify", "email"]
+}

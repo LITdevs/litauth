@@ -2,6 +2,7 @@ module.exports = {
   content: [
 	"./public/*.ejs",
 	"./public/common/*.ejs",
+	"./public/oauth/*.ejs",
   "./public/resources/*.js"
   ],
   darkMode: 'class', // or 'media' or 'class'
