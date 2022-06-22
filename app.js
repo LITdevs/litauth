@@ -331,6 +331,12 @@ app.post('/oauth/authorize', checkAuth, (req, res) => {
 })
 
 app.post('/api/oauth2/token', (req, res) => {
+	console.log("token request received")
+	if (!req.is("application/x-www-form-urlencoded")) console.log({type: "error", message: "Invalid request"});
+	if (!req.body.grant_type || !req.body.code || !req.body.redirect_uri) console.log({type: "error", message: "Invalid request"});
+	if (req.body.grant_type != "authorization_code") console.log({type: "error", message: "Unsupported grant type"});
+	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) console.log('invalid token type');
+	if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) console.log({type: "error", message: "Invalid request"});
 	// various code for making sure all the data is there
 	if (!req.is("application/x-www-form-urlencoded")) return res.status(400).send({type: "error", message: "Invalid request"});
 	if (!req.body.grant_type || !req.body.code || !req.body.redirect_uri) return res.status(400).send({type: "error", message: "Invalid request"});
