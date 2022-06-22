@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LITauth - App details</title>
+    <%- include(`${dirname}/public/common/darkmode.ejs`) %>
+	<script src="https://unpkg.com/@popperjs/core@2"></script>
+	<script src="https://unpkg.com/tippy.js@6"></script>
+  </head>
+  <body class="bg-gray-900 vbg">
+    <%- include(`${dirname}/public/common/nav.ejs`, {user: user}); %>
+    <div class="flex justify-center">
+        <div class="p-5 max-w-screen-md rounded-xl bg-wdark shadow-lg">
+            <form id="applicationForm" method="post">
+				<input type="hidden" name="_id" value="<%=app._id%>">
+				<input type="hidden" name="_csrf" value="<%=csrfToken%>">
+				<span class="text-vwhite font-bold">Application name: </span><input class="input-box" name="name" value="<%=app.name %>"><br><br>
+				<p class="text-vwhite cursor-pointer"><span class="font-bold">Client ID:</span> <span class="text-gray-400" id="clientId" onclick="navigator.clipboard.writeText(this.innerHTML);tippy('#clientId', {content: 'Copied to clipboard!'});this._tippy.show();" onmouseout="this._tippy.destroy()"><%=app.clientId%></span> (click to copy)</p>
+				<p class="text-vwhite cursor-pointer"><span class="font-bold">Client Secret:</span> <span class="text-gray-400" id="clientSecret" onclick="navigator.clipboard.writeText('<%=app.clientSecret%>');tippy('#clientSecret', {content: 'Copied to clipboard!'});this._tippy.show();" onmouseout="this._tippy.destroy();">hidden<span class="text-vwhite"> (click to copy)</span></span>  <span class="cursor-pointer text-blue-500" onclick="regenerateSecret()">Regenerate</span></p><br>
+				<label for="description" class="text-vwhite font-bold">Description:</label><br>
+				<textarea name="description" class="input-box" rows="4" placeholder="Description"><%=app.description%></textarea>
+				<div>
+					<span class="text-vwhite font-bold">Enabled scopes</span><br>
+					<%
+					allScopes.forEach(scope => {
+						%>
+						<div id="<%=scope%>O" class="max-w-max">
+							<label for="<%=scope%>" class="text-vwhite"><%=scope%></label>
+							<input type="checkbox" name="<%=scope%>" id="<%=scope%>" <% if (restrictedScopes.includes(scope)) { %>disabled<% } %> <% if (app.scopesAllowed.includes(scope)) { %>checked<% } %>/><br>
+						</div>
+						<%
+					})
+					%>
+				</div>
+				<br>
+				<span class="text-vwhite font-bold">Authorized Redirect URIs</span><br>
+				<div id="tags">
+					<div id="redirectUri0">
+						<input class="input-box mb-1" name="redirectUri_0" type="url" placeholder="http://localhost:5000" value="<%=app?.redirectUris?.[0] ? app.redirectUris[0] : ''%>" required/>
+					</div>
+					<%
+					let currentTag = 0;
+					if (app.redirectUris) {
+						app.redirectUris.forEach((tag, index) => {
+							if(index == 0) return; %>
+							<div id="redirectUri<%=currentTag + 1%>">
+								<input class="input-box mb-1" name="redirectUri_<%=currentTag + 1%>" type="url" placeholder="http://localhost:5000" value="<%=app?.redirectUris?.[currentTag + 1] ? app.redirectUris[currentTag + 1] : ''%>" required/>
+								<i class="fa-solid fa-trash-can text-vwhite" onclick="deltag(<%=currentTag + 1%>)"></i>
+							</div>
+							<%
+							currentTag++
+						})
+					}
+					%>
+				</div>
+				<i class="fa-solid fa-circle-plus text-3xl cursor-pointer text-vwhite" onclick="addTag()"></i><br>
+				<br>
+				<div class="flex justify-between">
+					<span class="button-red-border cursor-pointer" onclick="nuke()">Delete app</span>
+					<input type="submit" class="button-green cursor-pointer" value="Save"/>
+				</div>
+			</form>
+        </div>
+    </div>
+  </body>
+  <script>
+	function nuke() {
+		if (confirm("Are you SURE you want to COMPLETELY DELETE this app?\nAll accessTokens will be invalidated!")) {
+			if (confirm("ARE YOU DOUBLE SURE?")) {
+				if (confirm("ABSOLUTELY GIGA MEGA SURE?")) {
+					alert("Okay then... no backing out now!!");
+					fetch("/oauth/applications/<%=app._id%>/delete", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							"Accept": "application/json",
+						},
+						body: JSON.stringify({
+							_csrf: "<%=csrfToken %>"
+						})
+					}).then(res => res.json()).then(res => {
+						if (!res.err) {
+							window.location.href = "/oauth/applications";
+						} else {
+							alert(res.err);
+						}
+					})
+				}
+			}
+		}
+	}
+
+	let currentTag = <%=currentTag%>;
+
+	function deltag(tagId) {
+		let tag = document.getElementById('redirectUri' + tagId);
+		tag.remove();
+		currentTag = getLowestValidTag() - 1;
+	}
+	
+	function getLowestValidTag() {
+		let tags = document.getElementById('tags').children;
+		let existingTags = [];
+		for(let i = 0; i < tags.length; i++) {
+			existingTags.push(parseInt(tags[i].id.split('redirectUri')[1]));
+		}
+		existingTags.sort();
+		//get lowest missing value in array of numbers
+		let lowestMissing = 0;
+		for(let i = 0; i < existingTags.length; i++) {
+			if(existingTags[i] != i) {
+				lowestMissing = i;
+				break;
+			}
+		}
+		if (lowestMissing == 0) {
+			return existingTags.length;
+		} else {
+			return lowestMissing;
+		}
+	}
+	function addTag() {
+		document.getElementById("tags").appendChild(new DOMParser().parseFromString(`<div id="redirectUri${currentTag + 1}">
+			<input class="input-box mb-1" name="redirectUri_${currentTag + 1}" type="url" placeholder="http://localhost:5000" required/>
+			<i class="fa-solid fa-trash-can text-vwhite" onclick="deltag(${currentTag + 1})"></i><br></div>`, 'text/html').body.firstChild)
+		currentTag = getLowestValidTag() - 1;
+	}
+
+	document.querySelectorAll("input[type=checkbox]:disabled").forEach(el => {
+		console.log(el.id)
+		window[`tippy_${el.id}`] = tippy(`#${el.id}O`, {content: "This scope is restricted and cannot be enabled by you."});
+	})
+	function regenerateSecret() {
+		if (confirm("Warning: This will invalidate all existing accessTokens.")) {
+			fetch("/oauth/applications/<%=app._id%>/regeneratesecret", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"Accept": "application/json",
+				},
+				body: JSON.stringify({
+					_csrf: "<%=csrfToken %>"
+				})
+			}).then(res => res.json()).then(res => {
+				if (!res.err) {
+					window.location.reload();
+				} else {
+					alert(res.err);
+				}
+			})
+		}
+	}
+  </script>
+</html>

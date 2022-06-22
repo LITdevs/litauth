@@ -20,7 +20,7 @@ db.once('open', function() {
 	});
 	User = db.model('User', userSchema);
 	const codeSchema = new mongoose.Schema({
-		code: String,
+		code: {type: String, unique : true},
 		userId: String,
 		scopes: Array,
 		expires: Date,
@@ -29,8 +29,8 @@ db.once('open', function() {
 	})
 	Code = db.model('Code', codeSchema);
 	const applicationSchema = new mongoose.Schema({
-		clientId: String,
-		clientSecret: String,
+		clientId: {type: String, unique : true},
+		clientSecret: {type: String, unique : true},
 		ownedBy: String,
 		scopesAllowed: Array,
 		redirectUris: Array,
@@ -162,6 +162,13 @@ function getApplication(clientId, cb) {
 	})
 }
 
+function getApplicationById(id, cb) {
+	Application.findOne({_id:id}, (err, app) => {
+		if (err) return cb(err, null)
+		return cb(null, app)
+	})
+}
+
 function getCodeInformation(code, cb) {
 	Code.findOne({code:code}, (err, code) => {
 		if (err) return cb(err, null)
@@ -197,6 +204,37 @@ function getUserApplications(userId, cb) {
 	})
 }
 
+function createApplication(userId, cb) {
+	let app = new Application({
+		clientId: crypto.randomBytes(16).toString("hex"),
+		clientSecret: Buffer.from(crypto.randomBytes(32).toString("hex")).toString("base64"),
+		ownedBy: userId,
+		scopesAllowed: ["identify", "email"],
+		redirectUris: [""],
+		name: "My Awesome App",
+		description: "This app is totally LIT!!"
+	})
+	app.save((err, app) => {
+		if (err) return cb(err, null)
+		return cb(null, app)
+	})
+}
+
+function invalidateTokens(clientId) {
+	Token.deleteMany({client_id:clientId}, (err) => {
+		if (err) console.error(err)
+	});
+}
+
+function deleteApplication(id, clientId, cb) {
+	Token.deleteMany({client_id:clientId}, (err) => {
+		if (err) cb(err);
+	});
+	Application.deleteOne({_id:id}, (err) => {
+		return cb(err)
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -206,8 +244,12 @@ module.exports = {
 	createAccessToken,
 	getUser,
 	getApplication,
+	getApplicationById,
 	getCodeInformation,
 	deleteCode,
 	createCode,
-	getUserApplications
+	getUserApplications,
+	createApplication,
+	invalidateTokens,
+	deleteApplication
 }

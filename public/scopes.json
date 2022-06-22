@@ -1,4 +1,6 @@
 {
+    "all": ["identify", "email", "vukkybox", "vukkybox.edit"],
+    "restricted": ["vukkybox", "vukkybox.edit"],
     "/user": ["identify"],
     "/user/email": ["identify", "email"]
 }

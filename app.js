@@ -12,6 +12,7 @@ var express  = require('express')
   , nodemailer = require("nodemailer")
   , rateLimit = require('express-rate-limit');
 require("dotenv").config();
+let scopeJson = require(`${__dirname}/public/scopes.json`)
 const MongoDBStore = require("connect-mongodb-session")(session);
 
 var oobe = require('./routes/oobe');
@@ -294,7 +295,6 @@ function checkAuth(req, res, next) {
 }
 
 function getRequestScope(req) {
-	let scopeJson = JSON.parse(fs.readFileSync(`${__dirname}/public/scopes.json`).toString());
 	let url = req.url.split("/api")[1].split("?")[0];
 	let scope = scopeJson[url];
 	if(!scope) return null;
@@ -334,10 +334,7 @@ app.get('/api/user/email', accessTokenAuth, (req, res) => {
 	res.send({username: req.user.username, _id: req.user._id, email: req.user.email});
 })
 
-app.get('/.well-known/security.txt', function (req, res) {
-    res.type('text/plain');
-    res.send("Contact: mailto:contact@litdevs.org");
-});
+
 
 app.get('/oauth/authorize', checkAuth, (req, res) => {
 	if (!req.query.client_id) return res.status(400).send({type: "error", message: "Missing client_id"});
@@ -439,19 +436,133 @@ app.post('/api/oauth2/token', (req, res) => {
 
 app.get('/oauth/applications', checkAuth, (req, res) => {
 	db.getUserApplications(req.user._id, (err, apps) => {
-		if (err) return res.status(500).send({type: "error", message: "internal server error"});
+		if (err) {
+			console.error(err)
+			return res.status(500).send({type: "error", message: "internal server error"});
+		}
 		res.render(`${__dirname}/public/oauth/applications.ejs`, {apps, user: req.user, dirname: __dirname})
+	})
+})
+
+app.get('/oauth/applications/create', checkAuth, (req, res) => {
+	db.createApplication(req.user._id, (err, app) => {
+		if (err) {
+			console.error(err)
+			return res.status(500).send({type: "error", message: "internal server error"});
+		}
+		res.redirect(`/oauth/applications/${app._id}`)
+	})
+})
+
+app.get('/oauth/applications/:appId', checkAuth, (req, res) => {
+	db.getApplicationById(req.params.appId, (err, app) => {
+		if (err) {
+			console.error(err)
+			return res.status(500).send({type: "error", message: "internal server error"});
+		}
+		if(!app) return res.status(400).send({type: "error", message: "invalid application id"});
+		if(app.ownedBy != req.user._id) return res.status(403).send({type: "error", message: "forbidden"});
+		res.render(`${__dirname}/public/oauth/view.ejs`, {app, user: req.user, dirname: __dirname, csrfToken: req.csrfToken(), allScopes: scopeJson.all, restrictedScopes: scopeJson.restricted})
+	})
+})
+
+app.post('/oauth/applications/:appId', checkAuth, (req, res) => {
+	db.getApplicationById(req.params.appId, (err, app) => {
+		if (err) {
+			console.error(err)
+			return res.status(500).send({type: "error", message: "internal server error"});
+		}
+		if(!app) return res.status(400).send({type: "error", message: "invalid application id"});
+		if(app.ownedBy != req.user._id) return res.status(403).send({type: "error", message: "forbidden"});
+		if (!req.body.name || !req.body.description || req.body.name.trim().length < 1 || req.body.description.trim().length < 1) return res.status(400).send({type: "error", message: "invalid request"});
+		app.name = req.body.name.trim();
+		app.description = req.body.description.trim();
+		
+		let allScopes = scopeJson.all;
+		let restrictedScopes = scopeJson.restricted;
+		let scopes = [];
+		for (let i = 0; i < allScopes.length; i++) {
+			if (req.body[allScopes[i]] && req.body[allScopes[i]] == "on" && !restrictedScopes.includes(allScopes[i])) {
+				scopes.push(allScopes[i]);
+			}
+		}
+		for (let i = 0; i < restrictedScopes.length; i++) {
+			if (app.scopesAllowed.includes(restrictedScopes[i])) {
+				scopes.push(restrictedScopes[i]);
+			}
+		}
+		app.scopesAllowed = scopes;
+		
+		let redirectUris = []
+		for (let i = 0; i < Object.keys(req.body).length; i++) {
+			if (Object.keys(req.body)[i].startsWith("redirectUri")) {
+				redirectUris.push(req.body[Object.keys(req.body)[i]]);
+			}
+		}
+		app.redirectUris = redirectUris;
+		app.save((err, savedApp) => {
+			if (err) {
+				console.error(err)
+				return res.status(500).send({type: "error", message: "internal server error"});
+			}
+			res.redirect(`/oauth/applications/${savedApp._id}`)
+		})
+	})
+})
+
+app.post('/oauth/applications/:appId/delete', checkAuth, (req, res) => {
+	db.getApplicationById(req.params.appId, (err, app) => {
+		if (err) {
+			console.error(err)
+			return res.status(500).send({type: "error", message: "internal server error"});
+		}
+		if(!app) return res.status(400).send({type: "error", message: "invalid application id"});
+		if(app.ownedBy != req.user._id) return res.status(403).send({type: "error", message: "forbidden"});
+		db.deleteApplication(app._id, app.clientId, (err) => {
+			if (err) {
+				console.error(err)
+				return res.status(500).send({type: "error", message: "internal server error"});
+			}
+			res.send({err: null});
+		});
+	})
+
+})
+app.post('/oauth/applications/:appId/regenerateSecret', checkAuth, (req, res) => {
+	db.getApplicationById(req.params.appId, (err, app) => {
+		if (err) {
+			console.error(err)
+			return res.status(500).send({type: "error", message: "internal server error"});
+		}
+		if(!app) return res.status(400).send({type: "error", message: "invalid application id"});
+		if(app.ownedBy != req.user._id) return res.status(403).send({type: "error", message: "forbidden"});
+		app.clientSecret = Buffer.from(crypto.randomBytes(32).toString("hex")).toString("base64")
+		app.save((err, savedApp) => {
+			if (err) {
+				console.error(err)
+				return res.status(500).send({err: "internal server error", clientSecret: null});
+			}
+			res.send({err: null})
+		})
+		db.invalidateTokens(app.clientId);
 	})
 })
 
 /* //////////////////////////////////
     404 all other routes, start the server, module exports
    ////////////////////////////////// */
+
+app.get('/.well-known/security.txt', function (req, res) {
+    res.type('text/plain');
+    res.send("Contact: mailto:contact@litdevs.org");
+});
+
 app.get('*', function(req, res){
 	res.status(404).render(`${__dirname}/public/404.ejs`);
 });
 
 var http = require('http');
+const { allowedNodeEnvironmentFlags } = require('process');
 
 const httpServer = http.createServer(app);
 

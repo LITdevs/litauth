@@ -18,6 +18,10 @@
     @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-wdark bg-vwhite hover:bg-[#cc2535] hover:text-vwhite;
 }
 
+.button-red-border {
+    @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-[#cc2535] border border-[#cc2535] hover:bg-[#cc2535] hover:text-vwhite;
+}
+
 .input-box {
     @apply shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none;
 }
