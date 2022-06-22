@@ -374,7 +374,7 @@ app.post('/api/oauth2/token', (req, res) => {
 					db.deleteCode(codeInfo._id);
 					res.contentType('application/json')
 					res.send({
-						"access_token": token.accessToken,
+						"access_token": token.token,
 						"token_type": "Bearer",
 						"expires_in": 604800,
 						"refresh_token": "none",
