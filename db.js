@@ -190,6 +190,13 @@ function createCode(clientId, userId, scopes, redirectUri, cb) {
 	})
 }
 
+function getUserApplications(userId, cb) {
+	Application.find({ownedBy:userId}, (err, apps) => {
+		if (err) return cb(err, null)
+		return cb(null, apps)
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -201,5 +208,6 @@ module.exports = {
 	getApplication,
 	getCodeInformation,
 	deleteCode,
-	createCode
+	createCode,
+	getUserApplications
 }

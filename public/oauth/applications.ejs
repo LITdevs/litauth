@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>LITauth - Applications</title>
+		<%- include(`${dirname}/public/common/darkmode.ejs`) %>
+	</head>
+	<body class="bg-gray-900 vbg">
+		<%- include(`${dirname}/public/common/nav.ejs`, {user: user}); %>
+		<div class="flex justify-center">
+			<div class="p-5">
+				<h1 class="text-center text-vwhite text-3xl">Your OAuth applications</h1>
+				<%
+					if (apps.length > 0) {
+						apps.forEach(app => {
+							%><%- include(`${dirname}/public/common/app.ejs`, {app: app}) %><%
+						})
+					} else {
+				%>
+				<p class="text-center text-vwhite">You have no applications yet.</p>
+				<% } %><br>
+				<%- include(`${dirname}/public/common/app.ejs`, {app: {name: "Create app!", clientId: "Create a new OAuth application", _id: "create"}}) %>
+			</div>
+		</div>
+	</body>
+</html>

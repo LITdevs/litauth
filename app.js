@@ -285,6 +285,60 @@ app.get('/info', checkAuth, (req, res) => {
 	res.send(JSON.stringify(req.user))
 })
 
+function checkAuth(req, res, next) {
+	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
+	if(user) return next();
+	if(req.method == 'POST') return res.status(403).send('You are not logged in.');
+	req.session.redirectTo = req.url;
+	res.redirect(`/`)
+}
+
+function getRequestScope(req) {
+	let scopeJson = JSON.parse(fs.readFileSync(`${__dirname}/public/scopes.json`).toString());
+	let url = req.url.split("/api")[1].split("?")[0];
+	let scope = scopeJson[url];
+	if(!scope) return null;
+	return scope;
+}
+
+function accessTokenAuth(req, res, next) {
+	try {
+		if(!req.headers.authorization) return res.status(403).send('no token');
+		if(!req.headers.authorization.trim().startsWith("Bearer")) return res.status(403).send('invalid token type');
+		let token = req.headers.authorization.trim().split(" ")[1];
+		if (!token || token.length < 16) return res.status(403).send('no token');
+		db.checkAccessToken(token, getRequestScope(req), (err, state, user) => {
+			if(err) return res.status(500).send('internal server error');
+			if(state == "invalid") return res.status(403).send('invalid token');
+			if(state == "expired") return res.status(403).send('token expired');
+			if(state == "disallowed") return res.status(403).send('out of scope');
+			if(!user) return res.status(403).send('invalid token');
+			req.user = user;
+			next();
+		})
+	} catch(e) {
+		console.error(e);
+		res.status(500).send('internal server error');
+	}
+}
+/* //////////////////////////////////
+	Public API and OAuth2
+   ////////////////////////////////// */
+app.get('/api/user', accessTokenAuth, (req, res) => {
+	res.contentType('application/json');
+	res.send({username: req.user.username, _id: req.user._id});
+})
+
+app.get('/api/user/email', accessTokenAuth, (req, res) => {
+	res.contentType('application/json');
+	res.send({username: req.user.username, _id: req.user._id, email: req.user.email});
+})
+
+app.get('/.well-known/security.txt', function (req, res) {
+    res.type('text/plain');
+    res.send("Contact: mailto:contact@litdevs.org");
+});
+
 app.get('/oauth/authorize', checkAuth, (req, res) => {
 	if (!req.query.client_id) return res.status(400).send({type: "error", message: "Missing client_id"});
 	if (!req.query.redirect_uri) return res.status(400).send({type: "error", message: "Missing redirect_uri"});
@@ -335,7 +389,7 @@ app.post('/api/oauth2/token', (req, res) => {
 	if (!req.is("application/x-www-form-urlencoded")) return res.status(400).send({type: "error", message: "Invalid request"});
 	if (!req.body.grant_type || !req.body.code || !req.body.redirect_uri) return res.status(400).send({type: "error", message: "Invalid request"});
 	if (req.body.grant_type != "authorization_code") return res.status(400).send({type: "error", message: "Unsupported grant type"});
-	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send('invalid token type');
+	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send({type: "error", message: "invalid token type"});
 	if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
 	let clientId = req.body.client_id;
 	let clientSecret = req.body.client_secret;
@@ -350,6 +404,8 @@ app.post('/api/oauth2/token', (req, res) => {
 	clientSecret = clientSecret.trim()
 	let code = req.body.code.trim();
 	let redirectUri = req.body.redirect_uri.trim();
+
+	// more validation
 	db.getCodeInformation(code, (err, codeInfo) => {
 		if (err) return res.status(500).send({type: "error", message: "internal server error"});
 		if (!codeInfo) return res.status(400).send({type: "error", message: "invalid code"});
@@ -366,6 +422,7 @@ app.post('/api/oauth2/token', (req, res) => {
 				db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
 					if (err) return res.status(500).send({type: "error", message: "internal server error"});
 					db.deleteCode(codeInfo._id);
+					// send json response with the token :nikonikonii:
 					res.contentType('application/json')
 					res.send({
 						"access_token": token.token,
@@ -380,60 +437,16 @@ app.post('/api/oauth2/token', (req, res) => {
 	})
 })
 
-function checkAuth(req, res, next) {
-	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
-	if(user) return next();
-	if(req.method == 'POST') return res.status(403).send('You are not logged in.');
-	req.session.redirectTo = req.url;
-	res.redirect(`/`)
-}
+app.get('/oauth/applications', checkAuth, (req, res) => {
+	db.getUserApplications(req.user._id, (err, apps) => {
+		if (err) return res.status(500).send({type: "error", message: "internal server error"});
+		res.render(`${__dirname}/public/oauth/applications.ejs`, {apps, user: req.user, dirname: __dirname})
+	})
+})
 
-function getRequestScope(req) {
-	let scopeJson = JSON.parse(fs.readFileSync(`${__dirname}/public/scopes.json`).toString());
-	let url = req.url.split("/api")[1].split("?")[0];
-	let scope = scopeJson[url];
-	if(!scope) return null;
-	return scope;
-}
-
-function accessTokenAuth(req, res, next) {
-	try {
-		if(!req.headers.authorization) return res.status(403).send('no token');
-		if(!req.headers.authorization.trim().startsWith("Bearer")) return res.status(403).send('invalid token type');
-		let token = req.headers.authorization.trim().split(" ")[1];
-		if (!token || token.length < 16) return res.status(403).send('no token');
-		db.checkAccessToken(token, getRequestScope(req), (err, state, user) => {
-			if(err) return res.status(500).send('internal server error');
-			if(state == "invalid") return res.status(403).send('invalid token');
-			if(state == "expired") return res.status(403).send('token expired');
-			if(state == "disallowed") return res.status(403).send('out of scope');
-			if(!user) return res.status(403).send('invalid token');
-			req.user = user;
-			next();
-		})
-	} catch(e) {
-		console.error(e);
-		res.status(500).send('internal server error');
-	}
-}
 /* //////////////////////////////////
-	Public API
+    404 all other routes, start the server, module exports
    ////////////////////////////////// */
-app.get('/api/user', accessTokenAuth, (req, res) => {
-	res.contentType('application/json');
-	res.send({username: req.user.username, _id: req.user._id});
-})
-
-app.get('/api/user/email', accessTokenAuth, (req, res) => {
-	res.contentType('application/json');
-	res.send({username: req.user.username, _id: req.user._id, email: req.user.email});
-})
-
-app.get('/.well-known/security.txt', function (req, res) {
-    res.type('text/plain');
-    res.send("Contact: mailto:contact@litdevs.org");
-});
-
 app.get('*', function(req, res){
 	res.status(404).render(`${__dirname}/public/404.ejs`);
 });
