@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LITauth - App details</title>
+    <%- include(`common/darkmode.ejs`) %>
+	<script src="https://unpkg.com/@popperjs/core@2"></script>
+	<script src="https://unpkg.com/tippy.js@6"></script>
+  </head>
+  <body class="bg-gray-900 vbg">
+    <%- include(`common/nav.ejs`, {user: user}); %>
+    <div class="flex justify-center">
+        <div class="p-5 max-w-screen-md rounded-xl bg-wdark shadow-lg">
+            <a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
+          	<p title="This is your Vukkybox email address. You can't change it." class="pl-5 text-gray-200"><%= user.primaryEmail %></p> <br>
+        </div>
+    </div>
+  </body>
+</html>

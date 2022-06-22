@@ -114,37 +114,9 @@ app.get('/logout', function(req, res) {
 	res.send('you killed niko<script>setTimeout(() => {window.location.href = "/"}, 2500)</script>');
 });
 
-/*app.post("/login/register", (req, res) => {
-	//TODO: use flash messages
-	req.body.email = req.body.email.toLowerCase();
-	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", message: "Invalid email address"});
-	if(req.body.username.trim().length < 3) return res.status(400).send({type: "username", message: "Username must be at least 3 characters long"});
-	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
-	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
-	
-	db.checkEmail(req.body.email, resp => {
-		if (resp) {
-			if (resp == "used") return res.status(400).send({type: "email", message: "An account is already registered to this email address"});
-			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
-		}
-
-		db.checkName(req.body.username, resp => {
-			if (resp) {
-				if (resp == "used") return res.status(400).send({type: "username", message: "This username is already taken!"});
-				return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
-			}
-
-			let salt = crypto.randomBytes(16);
-			crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', (err, pwd) => {
-				if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
-				db.createAccount(req.body.email, req.body.username, pwd, salt, data => {
-					if(data.error) return res.status(500).send({type: "error", message: data.error});
-					if(data.success) return res.sendStatus(200)
-				});
-			});
-		})
-	})
-})*/
+app.get('/profile', checkAuth, (req, res) => {
+	res.render(__dirname + '/public/profile.ejs', {user: req.user, csrfToken: req.csrfToken()});
+})
 
 let registerRateLimit = rateLimit({
 	windowMs: 60 * 1000, // 1 minute
