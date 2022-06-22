@@ -144,7 +144,7 @@ function createAccessToken(clientId, user, scopes, cb) {
 	})
 	token.save((err, token) => {
 		if (err) return cb(err, null)
-		return cb(null, accessToken)
+		return cb(null, token)
 	})
 }
 

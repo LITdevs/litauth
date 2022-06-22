@@ -372,7 +372,14 @@ app.post('/api/oauth2/token', (req, res) => {
 				db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
 					if (err) return res.status(500).send({type: "error", message: "internal server error"});
 					db.deleteCode(codeInfo._id);
-					res.send(token)
+					res.contentType('application/json')
+					res.send({
+						"access_token": token.accessToken,
+						"token_type": "Bearer",
+						"expires_in": 604800,
+						"refresh_token": "none",
+						"scope": token.scopes.join(" ")
+					})
 				})
 			})
 		})
