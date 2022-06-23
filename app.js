@@ -14,6 +14,7 @@ var express  = require('express')
 require("dotenv").config();
 let scopeJson = require(`${__dirname}/public/scopes.json`)
 const MongoDBStore = require("connect-mongodb-session")(session);
+const vukkysvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky2.svg`).toString();
 
 var oobe = require('./routes/oobe');
 
@@ -262,9 +263,10 @@ app.post("/login/register/2", (req, res) => {
 	})
 })
 
+
 app.get("/designer", checkAuth, (req, res) => {
 	let user = req.user._id ? req.user : req.user[0]
-	res.render(`${__dirname}/public/designer.ejs`, {user, csrfToken: req.csrfToken()});
+	res.render(`${__dirname}/public/designer.ejs`, {user, csrfToken: req.csrfToken(), svg: vukkysvg});
 })
 
 app.post('/login/password', passport.authenticate('local', {
@@ -296,6 +298,11 @@ function getRequestScope(req) {
 	let scope = scopeJson[url];
 	if(!scope) return null;
 	return scope;
+}
+
+function checkAuthOrToken(req, res, next) {
+	if (req.isAuthenticated()) return next();
+	accessTokenAuth(req, res, next);
 }
 
 function accessTokenAuth(req, res, next) {
@@ -331,7 +338,41 @@ app.get('/api/user/email', accessTokenAuth, (req, res) => {
 	res.send({username: req.user.username, _id: req.user._id, email: req.user.email});
 })
 
+app.get("/api/avatar/:userId", (req, res) => {
+	db.getUser(req.params.userId, (err, user) => {
+		if(err) return res.status(500).send('internal server error');
+		if(!user) return res.status(404).send('user not found');
+		res.contentType('image/svg+xml');
+		res.send(vukkysvg.replace("#00a8f3", user.avatar.color));
+	})
+})
 
+app.post("/api/avatar", checkAuthOrToken, (req, res) => {
+	if(!req.body.color) return res.status(400).send({type: "error", message: "Missing color"});
+	if(!req.body.background) return res.status(400).send({type: "error", message: "Missing background"});
+	let hexRegex = /^#(?:[0-9a-fA-F]{3}){1,2}$/
+	if(!hexRegex.test(req.body.color)) return res.status(400).send({type: "error", message: "Invalid color"});
+	if(!hexRegex.test(req.body.background)) return res.status(400).send({type: "error", message: "Invalid background"});
+	db.getUser(req.user._id, (err, user) => {
+		if(err) {
+			console.error(err);
+			return res.status(500).send({type: "error", message: "Internal server error"});
+		}
+		if(!user) return res.status(404).send({type: "error", message: "Invalid user"});
+		user.avatar.color = req.body.color;
+		user.avatar.background = req.body.background;
+		user.markModified("avatar");
+		user.save((err) => {
+			if(err) {
+				console.error(err);
+				return res.status(500).send({type: "error", message: "Internal server error"});
+			}
+			req.session.passport.user.avatar = user.avatar;
+			req.session.save();
+			res.sendStatus(200);
+		})
+	})
+})
 
 app.get('/oauth/authorize', checkAuth, (req, res) => {
 	if (!req.query.client_id) return res.status(400).send({type: "error", message: "Missing client_id"});

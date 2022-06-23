@@ -16,6 +16,7 @@ db.once('open', function() {
 	username: {type: String, unique : true},
 	passwordHash: Buffer,
 	email: {type: String, unique : true},
+	avatar: Object,
 	salt: Buffer
 	});
 	User = db.model('User', userSchema);
@@ -65,15 +66,8 @@ function createAccount(email, username, password, salt, cb) {
 				passwordHash:password,
 				salt:salt,
 				avatar: {
-					faceplate: 0,
+					background: "#ffffff",
 					color: "#00A8F3",
-					accessories: [
-						{
-							name: "key",
-							x: 0,
-							y: 0
-						}
-					]
 				}
 	})
 	user.save(function (err, user) {

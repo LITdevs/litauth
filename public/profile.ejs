@@ -9,9 +9,10 @@
   <body class="bg-gray-900 vbg">
     <%- include(`common/nav.ejs`, {user: user}); %>
     <div class="flex justify-center">
-        <div class="p-5 max-w-screen-md rounded-xl bg-wdark shadow-lg">
-            <a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900 text-vwhite"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
-          	<p title="This is your Vukkybox email address. You can't change it." class="pl-5 text-gray-200"><%= user.email %></p> <br>
+        <div class="p-5 max-w-screen-md rounded-xl bg-vwhite dark:bg-wdark shadow-lg">
+            <a href="/designer"><img src="/api/avatar/<%=user._id%>" class="rounded-full h-16 w-16 inline cursor-pointer" style="background-color:<%=user.avatar.background%>" alt="avatar"></a>
+            <a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900 text-wdark dark:text-vwhite inline rounded-sm py-1"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
+          	<br><p title="This is your email address. You can't change it yet" class="pl-5 text-gray-400 my-1"><%= user.email %></p> 
         </div>
     </div>
   </body>

@@ -1,6 +1,7 @@
 {
-    "all": ["identify", "email", "vukkybox", "vukkybox.edit"],
+    "all": ["identify", "email", "avatar", "vukkybox", "vukkybox.edit"],
     "restricted": ["vukkybox", "vukkybox.edit"],
     "/user": ["identify"],
+    "/avatar": ["avatar"],
     "/user/email": ["identify", "email"]
 }
