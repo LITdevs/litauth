@@ -17,7 +17,7 @@
 			<p class="text-wdark dark:text-vwhite font-bold">Authorized applications</p>
 			<% apps.forEach(app => {
 				%>
-				<span class="text-vwhite"><span class="text-gray-400"><%=app.scopes.join(", ")%></span> on <%=app.name%>. Expires on <%=new Date(app.expires).toLocaleString()%></span>
+				<span class="text-vwhite dark:text-wdark"><span class="text-gray-400"><%=app.scopes.join(", ")%></span> on <%=app.name%>. Expires on <%=new Date(app.expires).toLocaleString()%></span>
 				<a href="/oauth/unauthorize/<%=app.unauthid%>"><span class="text-blue-500">Unauthorize</span></a>
 				<%
 			}) %>
