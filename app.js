@@ -137,7 +137,7 @@ app.post('/editProfile', checkAuth, (req, res) => {
 				if(err) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "An error occurred."});
 				req.session.passport.user.username = req.body.username;
 				req.session.save()
-				res.redirect('/profile');
+				res.redirect('/profile?usernamechanged=true');
 			})
 		})
 	})
