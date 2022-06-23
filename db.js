@@ -149,6 +149,24 @@ function getUser(userId, cb) {
 	})
 }
 
+function getToken(tokenId, cb) {
+	Token.findOne({_id:tokenId}, (err, token) => {
+		if (err) return cb(err, null)
+		return cb(null, token)
+	})
+}
+
+function deleteToken(tokenId, cb) {
+	Token.deleteOne({_id:tokenId}, (err) => {
+		if (err) {
+			console.error(err)
+			return cb(err)
+		}
+		return cb(null)
+	})
+}
+
+
 function getApplication(clientId, cb) {
 	Application.findOne({clientId:clientId}, (err, app) => {
 		if (err) return cb(err, null)
@@ -229,6 +247,30 @@ function deleteApplication(id, clientId, cb) {
 	})
 }
 
+function userAuthorizedApps(userId, cb) {
+	let apps = []
+	Token.find({user:userId}, (err, tokens) => {
+		if (tokens.length == 0) return cb(null, apps)
+		let removedTokens = 0
+		tokens.forEach((token, index) => {
+			if (token.expires < new Date()) {
+				Token.deleteOne({token:token.token}, (err) => {
+					if (err) console.error(err)
+				})
+				removedTokens++
+				if (removedTokens == tokens.length) return cb(null, [])
+			}
+			Application.findOne({clientId:token.client_id}, (err, app) => {
+				app.expires = token.expires
+				app.scopes = token.scopes
+				app.unauthid = token._id
+				apps.push(app);
+				if (apps.length == tokens.length - removedTokens) cb(null, apps)
+			})
+		})
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -245,5 +287,8 @@ module.exports = {
 	getUserApplications,
 	createApplication,
 	invalidateTokens,
-	deleteApplication
+	deleteApplication,
+	userAuthorizedApps,
+	getToken,
+	deleteToken
 }

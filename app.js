@@ -116,7 +116,10 @@ app.get('/logout', function(req, res) {
 });
 
 app.get('/profile', checkAuth, (req, res) => {
-	res.render(__dirname + '/public/profile.ejs', {user: req.user, csrfToken: req.csrfToken()});
+	db.userAuthorizedApps(req.user._id, (err, apps) => {
+		if(err) return res.status(500).render(`${__dirname}/public/error.ejs`, { stacktrace: err.stack, friendlyError: null });
+		res.render(__dirname + '/public/profile.ejs', {user: req.user, csrfToken: req.csrfToken(), apps});
+	})
 })
 
 app.get('/editProfile', checkAuth, (req, res) => {
@@ -344,6 +347,16 @@ app.get("/api/avatar/:userId", (req, res) => {
 		if(!user) return res.status(404).send('user not found');
 		res.contentType('image/svg+xml');
 		res.send(vukkysvg.replace("#00a8f3", user.avatar.color));
+	})
+})
+
+app.get('/oauth/unauthorize/:tokenId', checkAuth, (req, res) => {
+	db.getToken(req.params.tokenId, (err, token) => {
+		if(token.user != req.user._id) return res.status(403).send('unauthorized');
+		db.deleteToken(req.params.tokenId, (err) => {
+			if(err) return res.status(500).send('internal server error');
+			res.redirect("/profile");
+		});
 	})
 })
 
@@ -600,7 +613,7 @@ app.get('*', function(req, res){
 });
 
 var http = require('http');
-const { allowedNodeEnvironmentFlags } = require('process');
+const { allowedNodeEnvironmentFlags, ppid } = require('process');
 
 const httpServer = http.createServer(app);
 

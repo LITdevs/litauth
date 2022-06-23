@@ -1,28 +1,36 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>LITauth - Profile</title>
-    <%- include(`common/darkmode.ejs`) %>
+	<title>LITauth - Profile</title>
+	<%- include(`common/darkmode.ejs`) %>
 	<script src="https://unpkg.com/@popperjs/core@2"></script>
 	<script src="https://unpkg.com/tippy.js@6"></script>
   </head>
   <body class="bg-gray-900 vbg">
-    <%- include(`common/nav.ejs`, {user: user}); %>
-    <div class="flex justify-center">
-        <div class="p-5 max-w-screen-md rounded-xl bg-vwhite dark:bg-wdark shadow-lg">
-            <a href="/designer"><img src="/api/avatar/<%=user._id%>" class="rounded-full h-16 w-16 inline cursor-pointer" style="background-color:<%=user.avatar.background%>" alt="avatar"></a>
-            <a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900 text-wdark dark:text-vwhite inline rounded-sm py-1"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
-          	<br><p title="This is your email address. You can't change it yet" class="pl-5 text-gray-400 my-1"><%= user.email %></p> 
-        </div>
-    </div>
+	<%- include(`common/nav.ejs`, {user: user}); %>
+	<div class="flex justify-center">
+		<div class="p-5 max-w-screen-md rounded-xl bg-vwhite dark:bg-wdark shadow-lg">
+			<a href="/designer"><img src="/api/avatar/<%=user._id%>" class="rounded-full h-16 w-16 inline cursor-pointer" style="background-color:<%=user.avatar.background%>" alt="avatar"></a>
+			<a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900 text-wdark dark:text-vwhite inline rounded-sm py-1"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
+			<br><p title="This is your email address. You can't change it yet" class="pl-5 text-gray-400 my-1"><%= user.email %></p> 
+			<br><br>
+			<p class="text-wdark dark:text-vwhite font-bold">Authorized applications</p>
+			<% apps.forEach(app => {
+				%>
+				<span class="text-vwhite"><span class="text-gray-400"><%=app.scopes.join(", ")%></span> on <%=app.name%>. Expires on <%=new Date(app.expires).toLocaleString()%></span>
+				<a href="/oauth/unauthorize/<%=app.unauthid%>"><span class="text-blue-500">Unauthorize</span></a>
+				<%
+			}) %>
+		</div>
+	</div>
   </body>
   <script>
-      const params = new Proxy(new URLSearchParams(window.location.search), {
-        get: (searchParams, prop) => searchParams.get(prop),
-      });
-      
-      if(params.usernamechanged) {
-        alert("Username changed!\nYou may need to login again on other services to see the change.");
-      }
+	  const params = new Proxy(new URLSearchParams(window.location.search), {
+		get: (searchParams, prop) => searchParams.get(prop),
+	  });
+	  
+	  if(params.usernamechanged) {
+		alert("Username changed!\nYou may need to login again on other services to see the change.");
+	  }
   </script>
 </html>

@@ -5,43 +5,50 @@
 		<%- include('./common/darkmode.ejs') %>
   	</head>
   	<body class="bg-gray-900 vbg">
-		<%- include("./common/nav.ejs", {user: user}); %> 
-        <audio autoplay loop src="/resources/designer/unleashvukkies.mp3"></audio>
-		<h1 class="text-center text-vwhite text-3xl py-5"><b>LITauth Avatar designer 90000</b></h1>
-		<div class="text-center text-vwhite py-2 flex w-full justify-center">
-			<p>Welcome to the avatar designer!<br>You may notice it is quite similar to the <a class="text-blue-200" href="https://litdevs.org/logodesigner">Logo designer</a>...<br>This one was made first.<br>Anyways, customize your avatar here:</p>
-		</div>
-		<div class="flex w-full justify-center ">
-			<!-- Copyright LIT Devs - dont steal this please :nikowail: -->
-			<!-- Copyright LIT Devs - if you steal this we will sue you --> 
-			<!-- Copyright LIT Devs - if you steal this we will sue you :nikonikonii: -->
-			<!-- hi this is skelly reminding you that i have poured several days of work into all the LIT Devs stuff and its all free -->
-			<div id="vukkybg" class="p-5 bg-white border-4 rounded-l-lg border-[#00A8F3] shadow-xl" style="transition: background-color 0.3s ease;">
-				<%-svg%>
+		<%- include("./common/nav.ejs", {user: user}); %>
+		<div id="designer"> 
+			<audio autoplay loop src="/resources/designer/unleashvukkies.mp3"></audio>
+			<h1 class="text-center text-vwhite text-3xl py-5"><b>LITauth Avatar designer 90000</b></h1>
+			<div class="text-center text-vwhite py-2 flex w-full justify-center">
+				<p>Welcome to the avatar designer!<br>You may notice it is quite similar to the <a class="text-blue-200" href="https://litdevs.org/logodesigner">Logo designer</a>...<br>This one was made first.<br>Anyways, customize your avatar here:</p>
 			</div>
-			<div id="panel-right" class="bg-vwhite dark:bg-wdark rounded-r-lg sticky left-0 text-wdark dark:text-vwhite shadow-xl border-[#00A8F3] border-4 border-l-0 max-w-[12rem] p-2">
-				<div class="inline-block text-black">
-				    <img class="inline-block sticky top-2" src="/resources/designer/bgsquare.svg"></img>
-					<div class="inline-block sticky top-0 rounded-full w-14 h-10 bg-[#FFFFFF] border-2 border-amber-400" id="bgColorPickerButton" onclick="document.getElementById('bgColorPicker').click()"><i class="fa-solid fa-eye-dropper"></i></div>
-					<input class="rounded-lg opacity-0" name="bgColorPicker" type="color" id="bgColorPicker" onchange="updateBgColor(this);new Audio('/resources/designer/selection.wav').play()" value="#FFFFFF">
+			<div class="flex w-full justify-center ">
+				<!-- Copyright LIT Devs - dont steal this please :nikowail: -->
+				<!-- Copyright LIT Devs - if you steal this we will sue you --> 
+				<!-- Copyright LIT Devs - if you steal this we will sue you :nikonikonii: -->
+				<!-- hi this is skelly reminding you that i have poured several days of work into all the LIT Devs stuff and its all free -->
+				<div id="vukkybg" class="p-5 bg-white border-4 rounded-l-lg border-[#00A8F3] shadow-xl" style="transition: background-color 0.3s ease;">
+					<%-svg%>
 				</div>
-				<br>
-                <div class="inline-block text-black">
-				    <img class="inline-block sticky top-2" src="/resources/designer/vukkyoutline.svg"></img>
-					<div class="inline-block sticky top-0 rounded-full w-14 h-10 bg-[#00A8F3] border-2 border-amber-400" id="bodyColorPickerButton" onclick="document.getElementById('bodyColorPicker').click()"><i class="fa-solid fa-eye-dropper"></i></div>
-					<input class="rounded-lg opacity-0" name="bodyColorPicker" type="color" id="bodyColorPicker" onchange="updateBodyColor(this);new Audio('/resources/designer/selection.wav').play()" value="#00A8F3">
+				<div id="panel-right" class="bg-vwhite dark:bg-wdark rounded-r-lg sticky left-0 text-wdark dark:text-vwhite shadow-xl border-[#00A8F3] border-4 border-l-0 max-w-[12rem] p-2">
+					<div class="inline-block text-black">
+						<img class="inline-block sticky top-2" src="/resources/designer/bgsquare.svg"></img>
+						<div class="inline-block sticky top-0 rounded-full w-14 h-10 bg-[#FFFFFF] border-2 border-amber-400" id="bgColorPickerButton" onclick="document.getElementById('bgColorPicker').click()"><i class="fa-solid fa-eye-dropper"></i></div>
+						<input class="rounded-lg opacity-0" name="bgColorPicker" type="color" id="bgColorPicker" onchange="updateBgColor(this);new Audio('/resources/designer/selection.wav').play()" value="#FFFFFF">
+					</div>
+					<br>
+					<div class="inline-block text-black">
+						<img class="inline-block sticky top-2" src="/resources/designer/vukkyoutline.svg"></img>
+						<div class="inline-block sticky top-0 rounded-full w-14 h-10 bg-[#00A8F3] border-2 border-amber-400" id="bodyColorPickerButton" onclick="document.getElementById('bodyColorPicker').click()"><i class="fa-solid fa-eye-dropper"></i></div>
+						<input class="rounded-lg opacity-0" name="bodyColorPicker" type="color" id="bodyColorPicker" onchange="updateBodyColor(this);new Audio('/resources/designer/selection.wav').play()" value="#00A8F3">
+					</div>
+					<br>
+					<br>
+					<p>Select the colors for the body and the background here!</p>
+					<p>Once you're done, just click the Set avatar button.</p>
 				</div>
-				<br>
-				<br>
-				<p>Select the colors for the body and the background here!</p>
-				<p>Once you're done, just click the Set avatar button.</p>
+				
 			</div>
-			
+			<div class="flex w-full justify-center">
+				<div id="panel-bottom" class="sticky top-0 left-[-25%] shadow-xl bg-vwhite dark:bg-wdark rounded-b-lg border-[#00A8F3] border-4 border-t-0">
+					<button class="button-dark my-6 mx-12" onclick="submitAvatar()">Set avatar</button>
+				</div>
+			</div>
 		</div>
-		<div class="flex w-full justify-center">
-			<div id="panel-bottom" class="sticky top-0 left-[-25%] shadow-xl bg-vwhite dark:bg-wdark rounded-b-lg border-[#00A8F3] border-4 border-t-0">
-				<button class="button-dark my-6 mx-12" onclick="submitAvatar()">Set avatar</button>
-			</div>
+		<div class="hidden" id="endingAnimation">
+			<img src="" style="position:absolute;left:10rem;top:10rem" id="endingVukky"/>
+			<h1 class="text-fuchsia-500 text-6xl hidden" id="endingText" style="position:absolute;left:10rem;top:10rem;z-index:200;"><span class="font-bold">ITEM GET!!</span> <span>Vukky Avatar</span></h1>
+			<img src="/resources/designer/server.png" style="position: absolute;left:70rem;top:13rem"
 		</div>
   </body>
   <script>
@@ -70,7 +77,37 @@
 			})
 		}).then(res => {
 			if (res.status == 200) {
-				window.location.href = "/profile"
+				//window.location.href = "/profile"
+				document.getElementById("designer").classList.add("hidden")
+				document.getElementById("endingAnimation").classList.remove("hidden")
+				document.getElementById("endingVukky").src = "/api/avatar/<%=user._id%>"
+				let v = document.getElementById("endingVukky")
+				document.querySelector("body").style.overflow = "hidden";
+				for (let i = 0; i < 40; i++) {
+					setTimeout(() => {
+						v.style.transform = "scale(" + (1 + i / 20) + ") rotate(" + (i * 360 / 20) + "deg)"
+						if (i == 39) {
+							document.getElementById("endingText").classList.remove("hidden")
+							setTimeout(() => {
+								document.getElementById("endingText").classList.add("hidden")
+								// fling endingVukky to the right
+								let pos = 10
+								for (let i = 0; i < 60; i++) {
+									setTimeout(() => {
+										v.style.transform = "scale(" + (1 - i / 60) + ") rotate(" + (i * 360 / 20) + "deg)"
+										v.style.left = pos + "rem"
+										pos += 1
+										if (i == 59) {
+											setTimeout(() => {
+												window.location.href = "/profile";
+											}, 2000)
+										}
+									}, i * 12)
+								}
+							}, 2000);
+						}
+					}, i * 25)
+				}
 			} else {
 				alert(res.status + ": " + res.statusText)
 			}
