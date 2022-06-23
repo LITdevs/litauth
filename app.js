@@ -163,6 +163,7 @@ app.post("/login/register/1", (req, res) => {
 	if(req.body.username.trim().length < 3) return res.status(400).send({type: "username", message: "Username must be at least 3 characters long"});
 	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
 	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
+	if(!req.body.terms) return res.status(400).send({type: "terms", message: "You must agree to the terms and conditions"});
 	let usernameRegex = /[^a-zA-Z0-9\-_.,]/
 	if(usernameRegex.test(req.body.username)) return res.status(400).send({type: "username", message: "Username must not match /[^a-zA-Z0-9\-_.,]/"});
 	
@@ -276,7 +277,7 @@ app.post('/login/password', passport.authenticate('local', {
 	failureRedirect: '/',
 	failureFlash: true
 }), (req, res) => {
-	res.redirect(req.session.redirectTo ? req.session.redirectTo : '/info');
+	res.redirect(req.session.redirectTo ? req.session.redirectTo : '/profile');
 });
 
 app.get('/register', (req, res) => {

@@ -13,8 +13,8 @@
 	<audio id="coolmusic3" autoplay muted loop src="/resources/signup_3.mp3"></audio>
     <%- include("./common/nav.ejs", {user: user}); %> 
 	<div id="register_info">
-		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1>
-		<form id="registrationForm" class="mt-20p text-center space-y-5">
+		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1><br>
+		<form id="registrationForm" class="mt-20p text-center">
 			<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
 			<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');document.getElementById('usr_error').innerHTML = ''" required><br>
 			<span class="text-red-800" id="usr_error"></span><br>
@@ -23,6 +23,9 @@
 			<input type="password" name="password" placeholder="Password" class="input-box" id="pass_input" onchange="this.classList.remove('input-invalid');document.getElementById('pass_error').innerHTML = ''" required><br>
 			<span class="text-red-800" id="pass_error"></span><br>
 			<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid');document.getElementById('pass_error').innerHTML = ''" required><br>
+			<label for="terms" class="text-vwhite max-w-sm">I am 13 years old or older, and have read and accept <br> the terms outlined in the <a href="/terms" class="text-blue-200">Terms of Service</a> and the <a href="/privacy" class="text-blue-200">Privacy Policy</a></label>
+			<input type="checkbox" name="terms" onchange="document.getElementById('terms_error').innerHTML = ''" required><br>
+			<span class="text-red-800" id="terms_error"></span><br>
 			<input type="submit" class="button" value="Register">
 			<br><br><span class="text-red-800" id="error"><% if (messages?.error) { %><%=messages.error %><% } %></span>
 		</form>
@@ -52,6 +55,7 @@
 			<a href="/designer" class="button">Go</a>
 		</div>
 	</div>
+	<%- include("common/footer.ejs"); %>
   </body>
   <script>
 	let resendCounter
@@ -115,7 +119,8 @@
 					username: document.getElementById("registrationForm").username.value,
 					email: document.getElementById("registrationForm").email.value,
 					password: document.getElementById("registrationForm").password.value,
-					password2: document.getElementById("registrationForm").password2.value
+					password2: document.getElementById("registrationForm").password2.value,
+					terms: document.getElementById("registrationForm").terms.checked
                 })
             }).then(res => {
                switch(res.status) {
@@ -131,6 +136,9 @@
 							if(json.type == "email") {
                                 document.getElementById("email_input").classList.add("input-invalid");
                                 return document.getElementById("email_error").textContent = json.message;
+                            }
+							if(json.type == "terms") {
+                                return document.getElementById("terms_error").textContent = json.message;
                             }
                             if(json.type == "password") {
                                 document.getElementById("pass_input").classList.add("input-invalid");
