@@ -394,8 +394,8 @@ app.get('/oauth/authorize', checkAuth, (req, res) => {
 	if (!req.query.scope) return res.status(400).send({type: "error", message: "Missing scope"});
 	db.getApplication(req.query.client_id, (err, app) => {
 		if(err) return res.status(500).send({type: "error", message: "Internal server error"});
-		if(!app.redirectUris.includes(req.query.redirect_uri)) return res.status(400).send({type: "error", message: "Invalid redirect_uri"});
 		if (!app) return res.status(400).send({type: "error", message: "Invalid client_id"});
+		if(!app.redirectUris.includes(req.query.redirect_uri)) return res.status(400).send({type: "error", message: "Invalid redirect_uri"});
 		let scopes = req.query.scope.split(" ")
 		let scopesValid = true
 		for(let i = 0; i < scopes.length; i++) {
