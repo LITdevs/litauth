@@ -118,6 +118,31 @@ app.get('/profile', checkAuth, (req, res) => {
 	res.render(__dirname + '/public/profile.ejs', {user: req.user, csrfToken: req.csrfToken()});
 })
 
+app.get('/editProfile', checkAuth, (req, res) => {
+	res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: null});
+})
+
+app.post('/editProfile', checkAuth, (req, res) => {
+	if (!req.body.username || req.body.username == req.user.username) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "Please enter a new username."});
+	if (req.body.username.trim().length < 3 || req.body.username.trim().length > 32) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "Username must be between 3 and 32 characters."});
+	let usernameRegex = /[^a-zA-Z0-9\-_.,]/
+	if(usernameRegex.test(req.body.username)) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "Username must not match /[^a-zA-Z0-9\-_.,]/"});
+	db.checkName(req.body.username, (state) => {
+		if(state && state == "used") return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "Username is already in use."});
+		if(state) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "An error occurred."});
+		db.getUser(req.user._id, (err, user) => {
+			if(err) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "An error occurred."});
+			user.username = req.body.username;
+			user.save((err) => {
+				if(err) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "An error occurred."});
+				req.session.passport.user.username = req.body.username;
+				req.session.save()
+				res.redirect('/profile');
+			})
+		})
+	})
+})
+
 let registerRateLimit = rateLimit({
 	windowMs: 60 * 1000, // 1 minute
 	max: 1, // limit each IP to 1 requests per windowMs

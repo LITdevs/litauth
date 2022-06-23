@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<title>LITauth - Change username</title>
+	<%- include(`common/darkmode.ejs`) %>
+	<script src="https://unpkg.com/@popperjs/core@2"></script>
+	<script src="https://unpkg.com/tippy.js@6"></script>
+  </head>
+  <body class="bg-gray-900 vbg">
+	<%- include(`common/nav.ejs`, {user: user}); %>
+	<div class="flex justify-center">
+		<div class="p-5 max-w-screen-md rounded-xl bg-wdark shadow-lg">
+			<h1 class="text-center text-vwhite">Enter new username</h1>
+			<form method="post">
+				<input type="hidden" name="_csrf" value="<%=csrfToken %>">
+				<div class="flex justify-center">
+					<input type="text" minlength="3" maxlength="32" name="username" class="input-box" placeholder="<%=user.username%>"/><br>
+				</div>
+				<% if(error) { %>
+				<div class="text-center text-red-500">
+				<%= error %>
+				</div>
+				<% } %>
+				<br>
+				<div class="flex justify-center">
+					<input type="submit" class="button-green" value="Change username"/><br>
+				</div>
+			</form>
+		</div>
+	</div>
+  </body>
+</html>
