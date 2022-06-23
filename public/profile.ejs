@@ -18,7 +18,7 @@
 			<% apps.forEach(app => {
 				%>
 				<span class="text-wdark dark:text-vwhite"><span class="text-gray-400"><%=app.scopes.join(", ")%></span> on <%=app.name%>. Expires on <%=new Date(app.expires).toLocaleString()%></span>
-				<a href="/oauth/unauthorize/<%=app.unauthid%>"><span class="text-blue-500">Unauthorize</span></a>
+				<a href="/oauth/unauthorize/<%=app.unauthid%>"><span class="text-blue-500">Unauthorize</span></a><br>
 				<%
 			}) %>
 		</div>
