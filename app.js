@@ -15,6 +15,7 @@ require("dotenv").config();
 let scopeJson = require(`${__dirname}/public/scopes.json`)
 const MongoDBStore = require("connect-mongodb-session")(session);
 const vukkysvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky2.svg`).toString();
+const vukkybgsvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky.svg`).toString();
 
 var oobe = require('./routes/oobe');
 
@@ -340,6 +341,16 @@ app.get('/api/user', accessTokenAuth, (req, res) => {
 app.get('/api/user/email', accessTokenAuth, (req, res) => {
 	res.contentType('application/json');
 	res.send({username: req.user.username, _id: req.user._id, email: req.user.email});
+})
+
+app.get("/api/avatar/bg/:userId", (req, res) => {
+	db.getUser(req.params.userId, (err, user) => {
+		if(err) return res.status(500).send('internal server error');
+		if(!user) return res.status(404).send('user not found');
+		res.contentType('image/svg+xml');
+		let finalSvg = vukkybgsvg.replace("$BGCOLOR", user.avatar.background)
+		res.send(finalSvg.replace("#00a8f3", user.avatar.color));
+	})
 })
 
 app.get("/api/avatar/:userId", (req, res) => {
