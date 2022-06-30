@@ -442,7 +442,7 @@ app.post('/oauth/authorize', checkAuth, (req, res) => {
 		if(!scopesValid) return res.status(400).send({type: "error", message: "Scope invalid or not allowed for application"});
 		db.createCode(req.query.client_id, req.user._id, scopes, req.query.redirect_uri, (err, code) => {
 			if(err) return res.status(500).send({type: "error", message: "Internal server error"});
-			res.redirect(`${req.query.redirect_uri}?code=${code.code}`);
+			res.redirect(`${req.query.redirect_uri}?code=${code.code}${req.query.state ? "&state=" + req.query.state : ""}`);
 		})
 	})
 })
