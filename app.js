@@ -488,7 +488,7 @@ app.post('/api/oauth2/token', (req, res) => {
 					if (token) {
 						db.deleteCode(codeInfo._id);
 						// Existing token was found, change the expiry to 7 days from now and send it over!
-						token.expires = new Date() + (7 * 24 * 60 * 60 * 1000)
+						token.expires = Date.now() + (7 * 24 * 60 * 60 * 1000)
 						token.save(err => {
 							if (err) {
 								console.error(err)
