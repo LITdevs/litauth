@@ -545,7 +545,7 @@ app.post('/api/oauth2/token', (req, res) => {
 				console.error(err);
 				return res.status(500).send({type: "error", message: "Internal server error"})
 			}
-			if (app.clientId != clientId || app.clientSecret != clientSecret) return res.status(403).send({type: "error", message: "Unauthorized"})
+			if (!app || app.clientId != clientId || app.clientSecret != clientSecret) return res.status(403).send({type: "error", message: "Unauthorized"})
 			db.tokenFromRefresh(req.body.refresh_token, (err, token) => {
 				if(err) {
 					console.error(err);
