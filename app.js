@@ -409,11 +409,13 @@ app.get('/oauth/authorize', checkAuth, (req, res) => {
 		if(!app.redirectUris.includes(req.query.redirect_uri)) return res.status(400).send({type: "error", message: "Invalid redirect_uri"});
 		let scopes = req.query.scope.split(" ")
 		let scopesValid = true
+		let scopeValidation = []
 		for(let i = 0; i < scopes.length; i++) {
-			if(!app.scopesAllowed.includes(scopes[i])) {
+			if(!app.scopesAllowed.includes(scopes[i]) || scopeValidation.includes(scopes[i])) {
 				scopesValid = false
 				break
 			}
+			scopeValidation.push(scopes[i])
 		}
 		if(!scopesValid) return res.status(400).send({type: "error", message: "Scope invalid or not allowed for application"});
 		db.getUser(app.ownedBy, (err, author) => {
