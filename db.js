@@ -271,6 +271,15 @@ function userAuthorizedApps(userId, cb) {
 	})
 }
 
+function findExistingToken(clientId, userId, scopes, callback) {
+	// Before creating a new token, we should look for an identical existing authorization to prevent duplication
+	Token.findOne({client_id: clientId, user: userId, scopes: scopes}, (err, token) => {
+		if (err) return callback(err, null);
+		if(!token) return callback(null, null); // return nothing if there is no token
+		callback(null, token)
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -290,5 +299,6 @@ module.exports = {
 	deleteApplication,
 	userAuthorizedApps,
 	getToken,
-	deleteToken
+	deleteToken,
+	findExistingToken
 }

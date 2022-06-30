@@ -480,23 +480,48 @@ app.post('/api/oauth2/token', (req, res) => {
 			db.getUser(codeInfo.userId, (err, user) => {
 				if (err) return res.status(500).send({type: "error", message: "internal server error"});
 				if (!user) return res.status(400).send({type: "error", message: "invalid code"});
-				db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
-					if (err) return res.status(500).send({type: "error", message: "internal server error"});
-					db.deleteCode(codeInfo._id);
-					// send json response with the token :nikonikonii:
-					res.contentType('application/json')
-					res.send({
-						"access_token": token.token,
-						"token_type": "Bearer",
-						"expires_in": 604800,
-						"refresh_token": "none",
-						"scope": token.scopes.join(" ")
-					})
+				db.findExistingToken(clientId, user._id, codeInfo.scopes, (err, token) => {
+					if(err) {
+						console.error(err);
+						return res.status(500).send({type: "error", message: "internal server error"});
+					}
+					if (token) {
+						db.deleteCode(codeInfo._id);
+						// Existing token was found, change the expiry to 7 days from now and send it over!
+						token.expires = new Date() + (7 * 24 * 60 * 60 * 1000)
+						token.save(err => {
+							console.error(err)
+							return res.status(500).send({type: "error", message: "internal server error"});
+						})
+						res.contentType('application/json')
+						return res.send({
+							"access_token": token.token,
+							"token_type": "Bearer",
+							"expires_in": 604800,
+							"refresh_token": "none",
+							"scope": token.scopes.join(" ")
+						})
+					} else {
+						db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
+							if (err) return res.status(500).send({type: "error", message: "internal server error"});
+							db.deleteCode(codeInfo._id);
+							// send json response with the token :nikonikonii:
+							res.contentType('application/json')
+							res.send({
+								"access_token": token.token,
+								"token_type": "Bearer",
+								"expires_in": 604800,
+								"refresh_token": "none",
+								"scope": token.scopes.join(" ")
+							}) // and now for the end of callback hell
+						})
+					}
 				})
 			})
 		})
 	})
 })
+// --- End of end of callback hell --- 
 
 app.get('/oauth/applications', checkAuth, (req, res) => {
 	db.getUserApplications(req.user._id, (err, apps) => {
