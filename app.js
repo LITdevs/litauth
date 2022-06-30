@@ -450,83 +450,129 @@ app.post('/oauth/authorize', checkAuth, (req, res) => {
 app.post('/api/oauth2/token', (req, res) => {
 	// various code for making sure all the data is there
 	if (!req.is("application/x-www-form-urlencoded")) return res.status(400).send({type: "error", message: "Invalid request"});
-	if (!req.body.grant_type || !req.body.code || !req.body.redirect_uri) return res.status(400).send({type: "error", message: "Invalid request"});
-	if (req.body.grant_type != "authorization_code") return res.status(400).send({type: "error", message: "Unsupported grant type"});
-	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send({type: "error", message: "invalid token type"});
-	if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
-	let clientId = req.body.client_id;
-	let clientSecret = req.body.client_secret;
-	if(req.headers.authorization) {
-		let decoded = Buffer.from(req.headers.authorization.split(" ")[1], 'base64').toString('utf-8')
-		decoded = decoded.split(":")
-		clientId = decoded[0]
-		clientSecret = decoded[1]
-	}
-	// trim whitespace because whitespace is stupid
-	clientId = clientId.trim()
-	clientSecret = clientSecret.trim()
-	let code = req.body.code.trim();
-	let redirectUri = req.body.redirect_uri.trim();
+	if (!req.body.grant_type) return res.status(400).send({type: "error", message: "Invalid request"});
+	if (!["authorization_code", "refresh_token"].includes(req.body.grant_type)) return res.status(400).send({type: "error", message: "Unsupported grant type"});
+	if (req.body.grant_type == "authorization_code") {
+		if (!req.body.code || !req.body.redirect_uri) return res.status(400).send({type: "error", message: "Invalid request"});
+		if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send({type: "error", message: "invalid token type"});
+		if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
+		let clientId = req.body.client_id;
+		let clientSecret = req.body.client_secret;
+		if(req.headers.authorization) {
+			let decoded = Buffer.from(req.headers.authorization.split(" ")[1], 'base64').toString('utf-8')
+			decoded = decoded.split(":")
+			clientId = decoded[0]
+			clientSecret = decoded[1]
+		}
+		// trim whitespace because whitespace is stupid
+		clientId = clientId.trim()
+		clientSecret = clientSecret.trim()
+		let code = req.body.code.trim();
+		let redirectUri = req.body.redirect_uri.trim();
 
-	// more validation
-	db.getCodeInformation(code, (err, codeInfo) => {
-		if (err) return res.status(500).send({type: "error", message: "internal server error"});
-		if (!codeInfo) return res.status(400).send({type: "error", message: "invalid code"});
-		if (codeInfo.clientId != clientId) return res.status(400).send({type: "error", message: "invalid client id1"});
-		if (codeInfo.expires < new Date()) return res.status(400).send({type: "error", message: "invalid code"});
-		if (codeInfo.redirectUri != redirectUri) return res.status(400).send({type: "error", message: "invalid redirect uri"});
-		db.getApplication(clientId, (err, app) => {
+		// more validation
+		db.getCodeInformation(code, (err, codeInfo) => {
 			if (err) return res.status(500).send({type: "error", message: "internal server error"});
-			if (!app) return res.status(400).send({type: "error", message: "invalid client id"});
-			if (app.clientSecret != clientSecret) return res.status(400).send({type: "error", message: "invalid client secret"});
-			db.getUser(codeInfo.userId, (err, user) => {
+			if (!codeInfo) return res.status(400).send({type: "error", message: "invalid code"});
+			if (codeInfo.clientId != clientId) return res.status(400).send({type: "error", message: "invalid client id1"});
+			if (codeInfo.expires < new Date()) return res.status(400).send({type: "error", message: "invalid code"});
+			if (codeInfo.redirectUri != redirectUri) return res.status(400).send({type: "error", message: "invalid redirect uri"});
+			db.getApplication(clientId, (err, app) => {
 				if (err) return res.status(500).send({type: "error", message: "internal server error"});
-				if (!user) return res.status(400).send({type: "error", message: "invalid code"});
-				db.findExistingToken(clientId, user._id, codeInfo.scopes, (err, token) => {
-					if(err) {
-						console.error(err);
-						return res.status(500).send({type: "error", message: "internal server error"});
-					}
-					if (token) {
-						db.deleteCode(codeInfo._id);
-						// Existing token was found, change the expiry to 7 days from now and send it over!
-						token.expires = Date.now() + (7 * 24 * 60 * 60 * 1000)
-						token.save(err => {
-							if (err) {
-								console.error(err)
-								return res.status(500).send({type: "error", message: "internal server error"});
-							} else {
+				if (!app) return res.status(400).send({type: "error", message: "invalid client id"});
+				if (app.clientSecret != clientSecret) return res.status(400).send({type: "error", message: "invalid client secret"});
+				db.getUser(codeInfo.userId, (err, user) => {
+					if (err) return res.status(500).send({type: "error", message: "internal server error"});
+					if (!user) return res.status(400).send({type: "error", message: "invalid code"});
+					db.findExistingToken(clientId, user._id, codeInfo.scopes, (err, token) => {
+						if(err) {
+							console.error(err);
+							return res.status(500).send({type: "error", message: "internal server error"});
+						}
+						if (token) {
+							db.deleteCode(codeInfo._id);
+							// Existing token was found, change the expiry to 7 days from now and send it over!
+							token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+							token.save(err => {
+								if (err) {
+									console.error(err)
+									return res.status(500).send({type: "error", message: "internal server error"});
+								} else {
+									res.contentType('application/json')
+									return res.send({
+										"access_token": token.token,
+										"token_type": "Bearer",
+										"expires_in": 604800,
+										"refresh_token": "none",
+										"scope": token.scopes.join(" ")
+									})
+								}
+							})
+						} else {
+							db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
+								if (err) return res.status(500).send({type: "error", message: "internal server error"});
+								db.deleteCode(codeInfo._id);
+								// send json response with the token :nikonikonii:
 								res.contentType('application/json')
-								return res.send({
+								res.send({
 									"access_token": token.token,
 									"token_type": "Bearer",
 									"expires_in": 604800,
-									"refresh_token": "none",
+									"refresh_token": token.refresh_token,
 									"scope": token.scopes.join(" ")
-								})
-							}
-						})
-					} else {
-						db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
-							if (err) return res.status(500).send({type: "error", message: "internal server error"});
-							db.deleteCode(codeInfo._id);
-							// send json response with the token :nikonikonii:
-							res.contentType('application/json')
-							res.send({
-								"access_token": token.token,
-								"token_type": "Bearer",
-								"expires_in": 604800,
-								"refresh_token": "none",
-								"scope": token.scopes.join(" ")
-							}) // and now for the end of callback hell
-						})
-					}
+								}) // and now for the end of callback hell
+							})
+						}
+					})
 				})
 			})
 		})
-	})
+		// --- End of end of callback hell --- 
+	} else if (req.body.grant_type == "refresh_token") {
+		if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send({type: "error", message: "invalid token type"});
+		if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
+		let clientId = req.body.client_id;
+		let clientSecret = req.body.client_secret;
+		if(req.headers.authorization) {
+			let decoded = Buffer.from(req.headers.authorization.split(" ")[1], 'base64').toString('utf-8')
+			decoded = decoded.split(":")
+			clientId = decoded[0]
+			clientSecret = decoded[1]
+		}
+		if(!req.body.refresh_token) return res.status(400).send({type: "error", message: "Invalid request"});
+		db.getApplication(clientId, (err, app) => {
+			if (err) {
+				console.error(err);
+				return res.status(500).send({type: "error", message: "Internal server error"})
+			}
+			if (app.clientId != clientId || app.clientSecret != clientSecret) return res.status(403).send({type: "error", message: "Unauthorized"})
+			db.tokenFromRefresh(req.body.refresh_token, (err, token) => {
+				if(err) {
+					console.error(err);
+					return res.status(500).send({type: "error", message: "Internal server error"})
+				}
+				if(token.client_id != app.clientId) return res.status(400).send({type: "error", message: "Invalid request"});
+				if (!token) return res.status(400).send({type: "error", message: "Invalid refresh token"});
+				token.token = crypto.randomBytes(32).toString("hex");
+				token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+				token.save(err => {
+					if(err) {
+						console.error(err);
+						return res.status(500).send({type: "error", message: "Internal server error"})
+					}
+					res.contentType('application/json')
+					return res.send({
+						"access_token": token.token,
+						"token_type": "Bearer",
+						"expires_in": 604800,
+						"refresh_token": token.refresh_token,
+						"scope": token.scopes.join(" ")
+					})
+				})
+			})
+		})
+	}
 })
-// --- End of end of callback hell --- 
 
 app.get('/oauth/applications', checkAuth, (req, res) => {
 	db.getUserApplications(req.user._id, (err, apps) => {

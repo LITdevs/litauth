@@ -13,11 +13,11 @@ var Code
 var Application
 db.once('open', function() {
 	const userSchema = new mongoose.Schema({
-	username: {type: String, unique : true},
-	passwordHash: Buffer,
-	email: {type: String, unique : true},
-	avatar: Object,
-	salt: Buffer
+		username: {type: String, unique : true},
+		passwordHash: Buffer,
+		email: {type: String, unique : true},
+		avatar: Object,
+		salt: Buffer
 	});
 	User = db.model('User', userSchema);
 	const codeSchema = new mongoose.Schema({
@@ -44,6 +44,7 @@ db.once('open', function() {
 tokendb.once('open', function() {
 	const tokenSchema = new mongoose.Schema({
 		token: {type: String, unique: true},
+		refresh_token: {type: String, unique: true},
 		user: String,
 		client_id: String,
 		scopes: Array,
@@ -131,6 +132,7 @@ function createAccessToken(clientId, user, scopes, cb) {
 	let accessToken = crypto.randomBytes(32).toString("hex");
 	let token = new Token({
 		token: accessToken,
+		refresh_token: crypto.randomBytes(32).toString("hex"),
 		client_id: clientId,
 		scopes: scopes,
 		expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
@@ -280,6 +282,13 @@ function findExistingToken(clientId, userId, scopes, callback) {
 	})
 }
 
+function tokenFromRefresh(rt, callback) {
+	Token.findOne({refresh_token: rt}, (err, token) => {
+		if (err) return callback(err, null);
+		callback(null, token)
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -300,5 +309,6 @@ module.exports = {
 	userAuthorizedApps,
 	getToken,
 	deleteToken,
-	findExistingToken
+	findExistingToken,
+	tokenFromRefresh
 }
