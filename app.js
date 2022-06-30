@@ -551,8 +551,8 @@ app.post('/api/oauth2/token', (req, res) => {
 					console.error(err);
 					return res.status(500).send({type: "error", message: "Internal server error"})
 				}
-				if(token.client_id != app.clientId) return res.status(400).send({type: "error", message: "Invalid request"});
 				if (!token) return res.status(400).send({type: "error", message: "Invalid refresh token"});
+				if(token.client_id != app.clientId) return res.status(400).send({type: "error", message: "Invalid request"});
 				token.token = crypto.randomBytes(32).toString("hex");
 				token.expires = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
 				token.save(err => {
