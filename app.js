@@ -490,16 +490,19 @@ app.post('/api/oauth2/token', (req, res) => {
 						// Existing token was found, change the expiry to 7 days from now and send it over!
 						token.expires = new Date() + (7 * 24 * 60 * 60 * 1000)
 						token.save(err => {
-							console.error(err)
-							return res.status(500).send({type: "error", message: "internal server error"});
-						})
-						res.contentType('application/json')
-						return res.send({
-							"access_token": token.token,
-							"token_type": "Bearer",
-							"expires_in": 604800,
-							"refresh_token": "none",
-							"scope": token.scopes.join(" ")
+							if (err) {
+								console.error(err)
+								return res.status(500).send({type: "error", message: "internal server error"});
+							} else {
+								res.contentType('application/json')
+								return res.send({
+									"access_token": token.token,
+									"token_type": "Bearer",
+									"expires_in": 604800,
+									"refresh_token": "none",
+									"scope": token.scopes.join(" ")
+								})
+							}
 						})
 					} else {
 						db.createAccessToken(clientId, user, codeInfo.scopes, (err, token) => {
