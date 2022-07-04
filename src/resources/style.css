@@ -36,4 +36,18 @@
 
 .vbg {
     background-image: url("/resources/bg.png");
+    animation: scrolling 500s linear infinite;
+}
+.logo {
+    top: -1.25em;
+    left: 1em;
+    position: absolute;
+}
+@keyframes scrolling {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: -10000px -10000px;
+    }
 }
