@@ -118,10 +118,7 @@ function checkAccessToken(token, requestedScopes, cb) { //cb error, state, user
 			}
 			if (!scopesAllowed) return cb(null, "disallowed", null)
 			if(tokenDoc.expires < new Date()) {
-				cb(null, "expired", null)
-				return Token.deleteOne({token:token}, (err) => {
-					if (err) console.error(err)
-				});
+				return cb(null, "expired", null)
 			}
 			return cb(null, null, user)
 		})
