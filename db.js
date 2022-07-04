@@ -252,13 +252,13 @@ function userAuthorizedApps(userId, cb) {
 		if (tokens.length == 0) return cb(null, apps)
 		let removedTokens = 0
 		tokens.forEach((token, index) => {
-			if (token.expires < new Date()) {
+			/*if (token.expires < new Date()) {
 				Token.deleteOne({token:token.token}, (err) => {
 					if (err) console.error(err)
 				})
 				removedTokens++
 				if (removedTokens == tokens.length) return cb(null, [])
-			}
+			}*/
 			Application.findOne({clientId:token.client_id}, (err, app) => {
 				app.expires = token.expires
 				app.scopes = token.scopes
