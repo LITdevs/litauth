@@ -113,7 +113,7 @@ app.get('/terms', function(req, res){
 app.get('/logout', function(req, res) {
 	req.logout();
 	req.session.destroy();
-	res.send('you killed niko<script>setTimeout(() => {window.location.href = "/"}, 2500)</script>');
+	res.send('<h1>You have been signed out.</h1><iframe width="900" height="675" src="https://www.youtube-nocookie.com/embed/P7VPAln1Pfc?autoplay" title="ARE YOU READY TO LEAVE LEGO I ARE YOU READY TO LE ARE YOU READY TO LEAVE LEGO BEEEP" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><br><br><a href="/">Log back in.</a>');
 });
 
 app.get('/profile', checkAuth, (req, res) => {
