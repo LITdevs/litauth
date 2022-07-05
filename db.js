@@ -352,44 +352,48 @@ function tokenFromRefresh(rt, callback) {
 	})
 }
 
-function migrate(migrationCode, user, callback) {
+function migrate(migrationCode, lituser, callback) {
 	Migrate.findOne({migrationCode: migrationCode}, (err, doc) => {
 		if (err) return callback(err, null);
 		if (!doc) return callback("invalid", null);
-		OldVBUser.findOne({_id: doc.vukkyboxId}, (err, vbuser) => {
+		VBUser.findOne({litauthId: lituser._id}, (err, lvbuser) => {
 			if (err) return callback(err, null);
-			if (!vbuser) return callback("invalid", null);
-			let user = new VBUser({
-				litauthId: user._id,
-				primaryEmail: user.email,
-				username: user.username,
-				balance: vbuser.balance,
-				gallery: vbuser.gallery,
-				loginHourly: vbuser.loginHourly,
-				loginDaily: vbuser.loginDaily,
-				boxesOpened: vbuser.boxesOpened,
-				codesRedeemed: vbuser.codesRedeemed,
-				uniqueVukkiesGot: vbuser.uniqueVukkiesGot,
-				popupAccepted: false,
-				twoFactor: vbuser.twoFactor,
-				twoFactorSecret: vbuser.twoFactorSecret,
-				duplicates: vbuser.duplicates,
-				transactions: vbuser.transactions,
-				beta: vbuser.beta,
-				twoFactorClaimed: vbuser.twoFactorClaimed,
-				newsPopup: vbuser.newsPopup,
-				legacy: true
-			})
-			user.save((err, savedUser) => {
+			if (lvbuser) return callback("exists", null);
+			OldVBUser.findOne({_id: doc.vukkyboxId}, (err, vbuser) => {
 				if (err) return callback(err, null);
-				doc.remove((err) => {
+				if (!vbuser) return callback("invalid", null);
+				let user = new VBUser({
+					litauthId: lituser._id,
+					primaryEmail: lituser.email,
+					username: lituser.username,
+					balance: vbuser.balance,
+					gallery: vbuser.gallery,
+					loginHourly: vbuser.loginHourly,
+					loginDaily: vbuser.loginDaily,
+					boxesOpened: vbuser.boxesOpened,
+					codesRedeemed: vbuser.codesRedeemed,
+					uniqueVukkiesGot: vbuser.uniqueVukkiesGot,
+					popupAccepted: false,
+					twoFactor: vbuser.twoFactor,
+					twoFactorSecret: vbuser.twoFactorSecret,
+					duplicates: vbuser.duplicates,
+					transactions: vbuser.transactions,
+					beta: vbuser.beta,
+					twoFactorClaimed: vbuser.twoFactorClaimed,
+					newsPopup: vbuser.newsPopup,
+					legacy: true
+				})
+				user.save((err, savedUser) => {
 					if (err) return callback(err, null);
-					vbuser.remove((err) => {
+					doc.remove((err) => {
 						if (err) return callback(err, null);
-						callback(null, savedUser)
+						vbuser.remove((err) => {
+							if (err) return callback(err, null);
+							callback(null, savedUser)
+						})
 					})
 				})
-			})
+			})	
 		})
 	})
 }

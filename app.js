@@ -273,6 +273,7 @@ app.post("/migrate", checkAuth, (req, res) => {
 	db.migrate(req.body.migrationCode, req.user, (err, resp) => {
 		if(err) {
 			if (err == "invalid") return res.status(400).send({type: "error", message: "Invalid migration code"});
+			if (err == "exists") return res.status(400).send({type: "error", message: "A vukkybox user is already linked to this account. Please delete the existing vukkybox user and try again."});
 			console.error(err);
 			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
 		}
