@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 require("dotenv").config();
 const crypto = require('crypto');
-//const nodemailer = require("nodemailer");
+const nodemailer = require("nodemailer");
+const fs = require("fs")
 
 const db = mongoose.createConnection(process.env.MONGODB_HOST);
 const tokendb = mongoose.createConnection(process.env.MONGODB_OAUTH_HOST);
@@ -398,6 +399,28 @@ function migrate(migrationCode, lituser, callback) {
 	})
 }
 
+function sendMigration(email, username, id) {
+	let emailConfig = JSON.parse(fs.readFileSync(`${__dirname}/emailConfig.json`).toString())
+	let migrationCode = crypto.randomBytes(16).toString("hex")
+	let migrate = new Migrate({
+		migrationCode: migrationCode,
+		vukkyboxId: id
+	})
+	migrate.save((err, doc) => {
+		if (err) console.error(err)
+		let transporter = nodemailer.createTransport(emailConfig.mailerConfig);
+		let emailContent = fs.readFileSync(`${__dirname}/email/migrate.html`).toString();
+		emailContent = emailContent.replace("$username", username);
+		emailContent = emailContent.replace("$migrationCode", migrationCode);
+		transporter.sendMail({
+			from: emailConfig.sender,
+			to: email,
+			subject: "Important update regarding Vukkybox login",
+			html: emailContent
+		})
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -420,5 +443,6 @@ module.exports = {
 	deleteToken,
 	findExistingToken,
 	tokenFromRefresh,
-	migrate
+	migrate,
+	sendMigration
 }
