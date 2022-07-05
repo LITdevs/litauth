@@ -268,6 +268,18 @@ app.post("/login/register/2", (req, res) => {
 	})
 })
 
+app.post("/migrate", checkAuth, (req, res) => {
+	if(!req.body.migrationCode) return res.send(400).send({type: "error", message: "Please enter a migration code"});
+	db.migrate(req.body.migrationCode, req.user, (err, resp) => {
+		if(err) {
+			if (err == "invalid") return res.status(400).send({type: "error", message: "Invalid migration code"});
+			console.error(err);
+			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
+		}
+		if (!resp) return res.status(500).send({type: "error", message: "¯\_(ツ)_/¯"}); 
+		res.redirect("/profile?migration=success")
+	});
+})
 
 app.get("/designer", checkAuth, (req, res) => {
 	let user = req.user._id ? req.user : req.user[0]
