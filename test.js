@@ -1,4 +1,4 @@
 let db = require('./db');
 setTimeout(() => {
-	db.sendMigration('email', 'username', 'id')
+	db.sendMigrationToAll()
 }, 2000)

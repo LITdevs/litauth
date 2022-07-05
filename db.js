@@ -421,6 +421,35 @@ function sendMigration(email, username, id) {
 	})
 }
 
+function sendMigrationToAll() {
+	let emailConfig = JSON.parse(fs.readFileSync(`${__dirname}/emailConfig.json`).toString())
+	
+	let transporter = nodemailer.createTransport({...emailConfig.mailerConfig, pool: true, maxMessages: Infinity});
+	let emailContent = fs.readFileSync(`${__dirname}/email/migrate.html`).toString();
+
+	OldVBUser.find({}, (err, users) => {
+		if (err) return console.error(err)
+		users.forEach((user, index) => {
+			let parsedEmailContent = emailContent.replace("$username", user.username);
+			let migrationCode = crypto.randomBytes(10).toString("hex")
+			parsedEmailContent = parsedEmailContent.replace("$migrationCode", migrationCode);
+			let migrate = new Migrate({
+				migrationCode: migrationCode,
+				vukkyboxId: user._id
+			})
+			migrate.save((err, doc) => {
+				if (err) console.error(err)
+				transporter.sendMail({
+					from: emailConfig.sender,
+					to: user.primaryEmail,
+					subject: "Important update regarding Vukkybox login",
+					html: parsedEmailContent
+				})
+			});
+		})
+	})
+}
+
 module.exports = {
 	login,
 	checkEmail,
@@ -444,5 +473,6 @@ module.exports = {
 	findExistingToken,
 	tokenFromRefresh,
 	migrate,
-	sendMigration
+	sendMigration,
+	sendMigrationToAll
 }
