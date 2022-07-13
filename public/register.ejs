@@ -14,6 +14,7 @@
     <%- include("./common/nav.ejs", {user: user}); %> 
 	<div id="register_info">
 		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1><br>
+		<p class="text-center text-vwhite">Avoid using iCloud or Outlook email addresses, we have noticed large amounts of bounced emails.</p><br>
 		<form id="registrationForm" class="mt-20p text-center">
 			<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
 			<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');document.getElementById('usr_error').innerHTML = ''" required><br>
