@@ -41,7 +41,7 @@
     "mongoose": "^6.2.1",
     "node-fetch": "^2.6.7",
     "nodemailer": "^6.7.2",
-    "passport": "^0.5.2",
+    "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "tw-elements": "^1.0.0-alpha12"
   }
