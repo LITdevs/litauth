@@ -309,6 +309,7 @@ function checkAuth(req, res, next) {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
 	if(user) return next();
 	if(req.method == 'POST') return res.status(403).send('You are not logged in.');
+	console.log(req.url)
 	req.session.redirectTo = req.url;
 	res.redirect(`/`)
 }
