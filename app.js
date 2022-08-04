@@ -293,7 +293,6 @@ app.post('/login/password', passport.authenticate('local', {
 	failureRedirect: '/',
 	failureFlash: true
 }), (req, res) => {
-	console.log(req.session.redirectTo)
 	res.redirect(req.session.redirectTo ? req.session.redirectTo : '/profile');
 });
 
