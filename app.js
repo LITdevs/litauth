@@ -82,11 +82,11 @@ app.use("/oobe", oobe);
 passport.use(new LocalStrategy(function verify(username, password, cb) {
 	db.login(username, function(err, data) {
 	  if (err) return cb(err);
-	  if (!data) return cb(null, false, { message: 'Incorrect email address.' });
+	  if (!data) return cb(null, false, { message: '{"type": "pjuky", "title": "I couldn\'t find that account!", "message": "Maybe a typo? Or you don\'t have one?"}' });
 	  crypto.pbkdf2(password, data.salt, 310000, 32, 'sha256', function(err, hashedInput) {
 		if (err) { return cb(err); }
 		if (!crypto.timingSafeEqual(data.passwordHash, hashedInput)) {
-		  return cb(null, false, { message: 'Incorrect password.' });
+		  return cb(null, false, { message: '{"type": "hmmky", "title": "That\'s not the right password!", "message": "Maybe a typo? Or you forgot it? I hope not."}' });
 		}
 		return cb(null, data);
 	  });

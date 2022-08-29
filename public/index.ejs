@@ -8,6 +8,7 @@
   <body class="bg-gray-900 vbg">
     <%- include("./common/nav.ejs", {user: user}); %> 
     <h1 class="text-center text-vwhite text-3xl"><b>LITauth</b></h1>
+    <% if (messages?.error) { %> <%- include('./common/error.ejs', JSON.parse(messages.error)) %> <% } %>
     <form action="/login/password" method="post" class="mt-20p text-center space-y-5">
       <input type="hidden" name="_csrf" value="<%=csrfToken %>">
       <input type="email" name="username" class="input-box" placeholder="Email"><br>
@@ -15,7 +16,6 @@
       <input type="submit" class="button" value="Login"><br>
       <!--<a class="text-blue-200 font-bold" href="/migrate">Migrating from a Vukkybox account?</a><br>-->
       <a class="text-blue-200 font-bold" href="/register">Don't have an account?</a>
-      <% if (messages?.error) { %><br><span class="text-red-800"><%=messages.error %></span> <% } %>
     </form>
   </body>
 	<%- include("common/footer.ejs"); %>
