@@ -51,3 +51,16 @@
       background-position: -10000px -10000px;
     }
 }
+
+.youfailed-wrap {
+    @apply flex flex-row justify-center
+}
+.youfailed {
+    @apply flex flex-row bg-wlight-dark text-vwhite border-2 border-red-600 rounded-md p-2 items-center
+}
+.youfailedtext-wrap {
+    @apply pl-2
+}
+.youfailedtitle {
+    @apply font-bold
+}
