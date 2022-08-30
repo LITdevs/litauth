@@ -162,23 +162,23 @@ let registerRateLimit = rateLimit({
 app.post("/login/register/1", (req, res) => {
 	//TODO: use flash messages
 	req.body.email = req.body.email.toLowerCase();
-	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", message: "Invalid email address"});
-	if(req.body.username.trim().length < 3) return res.status(400).send({type: "username", message: "Username must be at least 3 characters long"});
-	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", message: "Password must be at least 8 characters long"});
-	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", message: "Passwords do not match"});
-	if(!req.body.terms) return res.status(400).send({type: "terms", message: "You must agree to the terms and conditions"});
+	if(!req.body.email.includes("@") || !req.body.email.includes(".")) return res.status(400).send({type: "email", face: "hmmky", title: "That doesn't look like an email address!", message: "Usually they have an @ sign... and a domain name..."});
+	if(req.body.username.trim().length < 3) return res.status(400).send({type: "username", face: "hmmky", title: "Username must be at least 3 characters long.", message: "I admire your short name, but chances are it's not that cool!"});
+	if(req.body.password.trim().length < 8) return res.status(400).send({type: "password", face: "hmmky", title: "Password must be at least 8 characters long.", message: "Your password is for babies!! At least make it a bit longer... How about 20 centimeters?"});
+	if(req.body.password !== req.body.password2) return res.status(400).send({type: "password", face: "pjuky", title: "Not a good typer?", message: "Your passwords don't match."});
+	if(!req.body.terms) return res.status(400).send({type: "terms", face: "hmmky", title: "Click that checkbox, to the beat!", message: "Hopefully it makes you forget we'll sell your soul."});
 	let usernameRegex = /[^a-zA-Z0-9\-_.,]/
-	if(usernameRegex.test(req.body.username)) return res.status(400).send({type: "username", message: "Username must not match /[^a-zA-Z0-9\-_.,]/"});
+	if(usernameRegex.test(req.body.username)) return res.status(400).send({type: "username", face: "pjuky", title: "Oops, you used illegal characters in your username!", message: "You can use English letters, numbers, hyphens, underscores, commas, and full stops."});
 	
 	db.checkEmail(req.body.email, resp => {
 		if (resp) {
-			if (resp == "used") return res.status(400).send({type: "email", message: "An account is already registered to this email address"});
+			if (resp == "used") return res.status(400).send({type: "email", face: "hmmky", title: "Someone has already registered with this email address.", message: "Maybe it's you, and you forgot?"});
 			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
 		}
 
 		db.checkName(req.body.username, resp => {
 			if (resp) {
-				if (resp == "used") return res.status(400).send({type: "username", message: "This username is already taken!"});
+				if (resp == "used") return res.status(400).send({type: "username", face: "pjuky", title: "Someone has already registered with this username.", message: "Maybe it was you, or you were just unlucky..."});
 				return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
 			}
 			registerRateLimit(req, res, () => {

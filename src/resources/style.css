@@ -52,7 +52,7 @@
     }
 }
 
-.youfailed-wrap {
+.youfailed-wrap:not(.hidden) {
     @apply flex flex-row justify-center
 }
 .youfailed {

@@ -12,21 +12,22 @@
 	<audio id="coolmusic2" autoplay muted loop src="/resources/signup_2.mp3"></audio>
 	<audio id="coolmusic3" autoplay muted loop src="/resources/signup_3.mp3"></audio>
     <%- include("./common/nav.ejs", {user: user}); %> 
-	<div id="register_info">
+	<%- include('./common/error.ejs', { type: "hmmky", title: "You need to have JavaScript enabled!", message: "Without it, most of our sites won't work properly."}) %>
+	<div id="register_info" class="hidden">
 		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1><br>
 		<p class="text-center text-vwhite">Avoid using iCloud or Outlook email addresses, we have noticed large amounts of bounced emails.</p><br>
 		<form id="registrationForm" class="mt-20p text-center">
 			<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
-			<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');document.getElementById('usr_error').innerHTML = ''" required><br>
-			<span class="text-red-800" id="usr_error"></span><br>
-			<input type="email" name="email" placeholder="Email" class="input-box" id="email_input" onchange="this.classList.remove('input-invalid');document.getElementById('email_error').innerHTML = ''" required><br>
-			<span class="text-red-800" id="email_error"></span><br>
-			<input type="password" name="password" placeholder="Password" class="input-box" id="pass_input" onchange="this.classList.remove('input-invalid');document.getElementById('pass_error').innerHTML = ''" required><br>
-			<span class="text-red-800" id="pass_error"></span><br>
-			<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid');document.getElementById('pass_error').innerHTML = ''" required><br>
+			<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');" required><br>
+			<br>
+			<input type="text" name="email" placeholder="Email" class="input-box" id="email_input" onchange="this.classList.remove('input-invalid');" required><br>
+			<br>
+			<input type="password" name="password" placeholder="Password" class="input-box" id="pass_input" onchange="this.classList.remove('input-invalid');" required><br>
+			<br>
+			<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid');" required><br>
 			<label for="terms" class="text-vwhite max-w-sm">I am 13 years old or older, and have read and accept <br> the terms outlined in the <a href="/terms" class="text-blue-200">Terms of Service</a> and the <a href="/privacy" class="text-blue-200">Privacy Policy</a></label>
-			<input type="checkbox" name="terms" onchange="document.getElementById('terms_error').innerHTML = ''" required><br>
-			<span class="text-red-800" id="terms_error"></span><br>
+			<input type="checkbox" name="terms" onchange="document.getElementById('terms_error').innerHTML = ''"><br>
+			<br>
 			<input type="submit" class="button" value="Register">
 			<br><br><span class="text-red-800" id="error"><% if (messages?.error) { %><%=messages.error %><% } %></span>
 		</form>
@@ -59,8 +60,18 @@
 	<%- include("common/footer.ejs"); %>
   </body>
   <script>
+	document.querySelector(".youfailed-wrap").classList.add("hidden")
+	document.querySelector("#register_info").classList.remove("hidden")
+
 	let resendCounter
 	let counter = 60
+
+	function showError(type, title, message) {
+		document.querySelector(".youfailedimg").src = `/resources/${type}.png`;
+		document.querySelector(".youfailedtitle").innerHTML = title;
+		document.querySelector(".youfailedtext").innerHTML = message;
+		document.querySelector(".youfailed-wrap").classList.remove("hidden")
+	}
 	function resendC() {
 		clearInterval(resendCounter)
 		document.getElementById("resendCounter").innerHTML = "(60)"
@@ -103,11 +114,6 @@
 	document.getElementById("registrationForm").onsubmit = (e) => {
         e.preventDefault()
 		document.getElementById("error").textContent = "";
-		if (document.getElementById("registrationForm").password.value != document.getElementById("registrationForm").password2.value) {
-            document.getElementById("pass_input").classList.add("input-invalid");
-            document.getElementById("pass_input2").classList.add("input-invalid");
-            return document.getElementById("pass_error").textContent = "Passwords do not match"
-        }
 		document.getElementById('loading').classList.remove("hidden")
 		document.getElementById('register_info').classList.add("hidden")
 		fetch('/login/register/1', {
@@ -130,6 +136,7 @@
 							
 							document.getElementById('loading').classList.add("hidden")
 							document.getElementById('register_info').classList.remove("hidden")
+							showError(json.face, json.title, json.message)
 							if(json.type == "username") {
                                 document.getElementById("usr_input").classList.add("input-invalid");
                                 return document.getElementById("usr_error").textContent = json.message;
