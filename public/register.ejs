@@ -26,13 +26,13 @@
 			<br>
 			<input type="password" name="password2" placeholder="Confirm password" class="input-box" id="pass_input2" onchange="this.classList.remove('input-invalid');" required><br>
 			<label for="terms" class="text-vwhite max-w-sm">I am 13 years old or older, and have read and accept <br> the terms outlined in the <a href="/terms" class="text-blue-200">Terms of Service</a> and the <a href="/privacy" class="text-blue-200">Privacy Policy</a></label>
-			<input type="checkbox" name="terms" onchange="document.getElementById('terms_error').innerHTML = ''"><br>
+			<input type="checkbox" name="terms"><br>
 			<br>
 			<input type="submit" class="button" value="Register">
 			<br><br><span class="text-red-800" id="error"><% if (messages?.error) { %><%=messages.error %><% } %></span>
 		</form>
 	</div>
-	<div id="loading" class="hidden text-center">
+	<div id="loading" class="hidden">
 		<img src="/resources/spinner.webp"/>
 	</div>
 	<div id="verify_email" class="hidden">
@@ -105,6 +105,7 @@
 	}
 	let currentStage = 1;
 	function nextTrack() {
+		document.querySelector(".youfailed-wrap").classList.add("hidden")
 		document.querySelector(`#coolmusic${currentStage + 1}`).muted = false;
 		document.querySelector(`#coolmusic${currentStage}`).muted = true;
 		currentStage += 1;
@@ -138,30 +139,27 @@
 							document.getElementById('register_info').classList.remove("hidden")
 							showError(json.face, json.title, json.message)
 							if(json.type == "username") {
-                                document.getElementById("usr_input").classList.add("input-invalid");
-                                return document.getElementById("usr_error").textContent = json.message;
+                                return document.getElementById("usr_input").classList.add("input-invalid");
                             }
 							if(json.type == "email") {
-                                document.getElementById("email_input").classList.add("input-invalid");
-                                return document.getElementById("email_error").textContent = json.message;
+                                return document.getElementById("email_input").classList.add("input-invalid");
                             }
 							if(json.type == "terms") {
-                                return document.getElementById("terms_error").textContent = json.message;
+                                return;
                             }
                             if(json.type == "password") {
                                 document.getElementById("pass_input").classList.add("input-invalid");
-                                document.getElementById("pass_input2").classList.add("input-invalid");
-                                return document.getElementById("pass_error").textContent = json.message;
+                                return document.getElementById("pass_input2").classList.add("input-invalid");
                             }
-                            document.getElementById("error").textContent = "ERR_USER_FAULT_400"; // this shouldnt happen, but if it does then it does
+                            showError(undefined, undefined, "Something went very wrong, please try again later") // this shouldnt happen, but if it does then it does
 						})
 					   break;
 					case 500:
                         res.json().then(json => {
 							document.getElementById('loading').classList.add("hidden")
 							document.getElementById('register_info').classList.remove("hidden")
-                            if(json.type == "error") return document.getElementById("error").textContent = json.message;
-                            document.getElementById("error").textContent = "Server encountered an error, please try again later"
+                            if(json.type == "error") return showError(undefined, undefined, json.message)
+                            showError(undefined, undefined, "Something went very wrong, please try again later")
                         })
 						break;
 					case 200:
@@ -174,19 +172,19 @@
 					case 429:
 						document.getElementById('loading').classList.add("hidden")
 						document.getElementById('register_info').classList.remove("hidden")
-						document.getElementById("error").textContent = "429 Too many requests, please try again later"
+						showError("pjuky", "You tried too much!", "Please try again later.")
 					break;
 			   }
         });
 	}
 	document.getElementById("verificationForm").onsubmit = e => {
 		e.preventDefault()
-		document.getElementById("verify_email").classList.add("hidden")
-		document.getElementById("loading").classList.remove("hidden")
 		if (document.getElementById("code_input").value.length != 6) {
 			document.getElementById("code_input").classList.add("input-invalid");
-			return document.getElementById("code_error").textContent = "Code must be 6 digits"
+			return showError("hmmky", "That's not right!", "The code is 6 digits.")
 		}
+		document.getElementById("verify_email").classList.add("hidden")
+		document.getElementById("loading").classList.remove("hidden")
 		fetch('/login/register/2', {
                 method: 'POST',
                 headers: {
@@ -217,20 +215,21 @@
 						})
 					break;
 					case 400:
+					case 429:
 						res.json().then(json => {
 							document.getElementById('loading').classList.add("hidden")
 							document.getElementById('verify_email').classList.remove("hidden")
 							if(json.type == "verificationWrong" || json.type == "verificationLimit" || json.type == "error") {
 								document.getElementById("code_input").classList.add("input-invalid");
-								return document.getElementById("code_error").textContent = json.message;
+								return showError(json.face, json.title, json.message)
 							}
-							document.getElementById("code_error").textContent = "ERR_USER_FAULT_400; contact@litdevs.org";
+							showError(undefined, undefined, "Something went very wrong, please try again later")
 						})
 					break;
 					case 500:
 						document.getElementById('loading').classList.add("hidden")
 						document.getElementById('verify_email').classList.remove("hidden")
-						document.getElementById("code_error").textContent = "Server encountered an error, please try again later"
+						showError(undefined, undefined, "Something went very wrong, please try again later")
 					break;
 				}
 			})

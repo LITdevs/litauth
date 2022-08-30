@@ -243,14 +243,14 @@ let verifyRatelimit = rateLimit({
 app.post("/login/register/2", (req, res) => {
 	if (!req.session.emailCode || !req.session.username) return res.status(400).send({type: "error", message: "Registration is not in progress"});
 	if (!req.body.verificationCode) return res.status(400).send({type: "error", message: "Please enter a verification code"});
-	if (req.session.verifyTries >= 3) return res.status(403).send({type: "verificationLimit", message: "Too many verification attempts"});
+	if (req.session.verifyTries >= 3) return res.status(429).send({type: "verificationLimit", face: "pjuky", title: "You tried too much!", message: "Please try again later."});
 	verifyRatelimit(req, res, () => {
 		if (req.body.verificationCode != req.session.emailCode) {
 			if (!req.session.verifyTries) req.session.verifyTries = 1
 			else req.session.verifyTries += 1
 			req.session.save()
-			if (req.session.verifyTries == 3) return res.status(403).send({type: "verificationLimit", message: "Too many verification attempts"});
-			return res.status(400).send({type: "verificationWrong", message: "Verification code is incorrect"});
+			if (req.session.verifyTries == 3) return res.status(429).send({type: "verificationLimit", face: "pjuky", title: "You tried too much!", message: "Please try again later."});
+			return res.status(400).send({type: "verificationWrong", face: "pjuky", title: "That's the wrong code.", message: "Maybe you're looking at an old email, or made a typo?"});
 		} else {
 			db.createAccount(req.session.email, req.session.username, req.session.passwordHash, req.session.salt, resp => {
 				if(resp.error) {
