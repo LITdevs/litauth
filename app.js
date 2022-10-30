@@ -129,6 +129,10 @@ app.get('/editProfile', checkAuth, (req, res) => {
 	res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: null});
 })
 
+app.get('/changePassword', checkAuth, (req, res) => {
+	res.render(__dirname + '/public/changePassword.ejs', {user: req.user, csrfToken: req.csrfToken(), error: null});
+})
+
 app.post('/editProfile', checkAuth, (req, res) => {
 	if (!req.body.username || req.body.username == req.user.username) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "Please enter a new username."});
 	if (req.body.username.trim().length < 3 || req.body.username.trim().length > 32) return res.render(__dirname + '/public/editProfile.ejs', {user: req.user, csrfToken: req.csrfToken(), error: "Username must be between 3 and 32 characters."});
@@ -150,6 +154,51 @@ app.post('/editProfile', checkAuth, (req, res) => {
 	})
 })
 
+app.post('/changePassword', checkAuth, (req, res) => {
+	if (!req.body.oldpwd || !req.body.newpwd) return res.render(__dirname + '/public/changePassword.ejs', {
+		user: req.user,
+		csrfToken: req.csrfToken(),
+		error: "Please fill out all fields."
+	});
+	if (req.body.newpwd.trim().length < 8) return res.render(__dirname + '/public/changePassword.ejs', {
+		user: req.user,
+		csrfToken: req.csrfToken(),
+		error: "Password must be at least 8 characters."
+	});
+	db.getUser(req.user._id, (err, user) => {
+		if (err) return res.render(__dirname + '/public/changePassword.ejs', {
+			user: req.user,
+			csrfToken: req.csrfToken(),
+			error: "An error occurred."
+		});
+		crypto.pbkdf2(req.body.oldpwd, user.salt, 310000, 32, 'sha256', function (err, oldHash) {
+			let same = crypto.timingSafeEqual(user.passwordHash, oldHash);
+			if (!same) return res.render(__dirname + '/public/changePassword.ejs', {
+				user: req.user,
+				csrfToken: req.csrfToken(),
+				error: "Incorrect password."
+			});
+			let newSalt = crypto.randomBytes(16);
+			crypto.pbkdf2(req.body.newpwd.trim(), newSalt, 310000, 32, 'sha256', (err, pwd) => {
+				if (err) return res.render(__dirname + '/public/changePassword.ejs', {
+					user: req.user,
+					csrfToken: req.csrfToken(),
+					error: "An error occurred."
+				});
+				user.passwordHash = pwd;
+				user.salt = newSalt;
+				user.save((err) => {
+					if (err) return res.render(__dirname + '/public/changePassword.ejs', {
+						user: req.user,
+						csrfToken: req.csrfToken(),
+						error: "An error occurred while saving user, password may or may not be changed"
+					});
+					res.redirect('/profile?passwordchanged=true');
+				})
+			})
+		})
+	})
+})
 let registerRateLimit = rateLimit({
 	windowMs: 60 * 1000, // 1 minute
 	max: 1, // limit each IP to 1 requests per windowMs

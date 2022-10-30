@@ -15,6 +15,7 @@
 			<a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900 text-wdark dark:text-vwhite inline rounded-sm py-1"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
 			<br><p title="This is your email address. You can't change it yet" class="pl-5 text-gray-400 my-1"><%= user.email %></p>
 			<br><form method="POST" action="/migrate"><input type="text" placeholder="Vukkybox migration code" name="migrationCode" class="input-box" required/> <input type="hidden" name="_csrf" value="<%=csrfToken%>"><input type="submit" class="button-dark"></form>
+			<a href="/changePassword" class="text-blue-500">Change password</a>
 			<br><br>
 			<p class="text-wdark dark:text-vwhite font-bold">Authorized applications</p>
 			<% apps.forEach(app => {
@@ -31,9 +32,13 @@
 	  const params = new Proxy(new URLSearchParams(window.location.search), {
 		get: (searchParams, prop) => searchParams.get(prop),
 	  });
-	  
+
 	  if(params.usernamechanged) {
-		alert("Username changed!\nYou may need to login again on other services to see the change.");
+		  alert("Username changed!\nYou may need to login again on other services to see the change.");
+	  }
+
+	  if(params.passwordchanged) {
+		  alert("Password changed!");
 	  }
 	  
 	  if(params?.migration == "success") {
