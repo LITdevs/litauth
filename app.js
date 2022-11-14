@@ -16,6 +16,7 @@ let scopeJson = require(`${__dirname}/public/scopes.json`)
 const MongoDBStore = require("connect-mongodb-session")(session);
 const vukkysvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky2.svg`).toString();
 const vukkybgsvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky.svg`).toString();
+const words = require("./util/words.js")
 
 var oobe = require('./routes/oobe');
 
@@ -352,7 +353,7 @@ app.post('/login/password', passport.authenticate('local', {
 
 app.get('/register', (req, res) => {
 	let user = req.isAuthenticated() ? req.user._id ? req.user : req.user[0] : null
-	res.render(__dirname + '/public/register.ejs', {user, csrfToken: req.csrfToken()});
+	res.render(__dirname + '/public/register.ejs', {user, csrfToken: req.csrfToken(), words});
 })
 
 app.get('/info', checkAuth, (req, res) => {

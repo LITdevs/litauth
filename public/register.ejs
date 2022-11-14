@@ -15,10 +15,9 @@
 	<%- include('./common/error.ejs', { type: "hmmky", title: "You need to have JavaScript enabled!", message: "Without it, most of our sites won't work properly."}) %>
 	<div id="register_info" class="hidden">
 		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1><br>
-		<p class="text-center text-vwhite">Avoid using iCloud or Outlook email addresses, we have noticed large amounts of bounced emails.</p><br>
 		<form id="registrationForm" class="mt-20p text-center">
 			<input type="hidden" name="_csrf" value="<%=csrfToken %>" id="csrf">
-			<input type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');" required><br>
+			<input id="usernameField" type="text" name="username" placeholder="Username" class="input-box" id="usr_input" onchange="this.classList.remove('input-invalid');" required><br>
 			<br>
 			<input type="text" name="email" placeholder="Email" class="input-box" id="email_input" onchange="this.classList.remove('input-invalid');" required><br>
 			<br>
@@ -58,8 +57,15 @@
 		</div>
 	</div>
 	<%- include("common/footer.ejs"); %>
-  </body>
-  <script>
+	</body>
+	<script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <script>
+      tippy('#usernameField', {
+        content: 'Empty head? Need ideas? How about <i><%=`${words[Math.floor(Math.random()*words.length)]}-${words[Math.floor(Math.random()*words.length)]}`%></i>?',
+      });
+    </script>
+ 	<script>
 	document.querySelector(".youfailed-wrap").classList.add("hidden")
 	document.querySelector("#register_info").classList.remove("hidden")
 
