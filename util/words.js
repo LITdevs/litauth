@@ -1,4 +1,4 @@
-export default [
+module.exports = [
     "abandon",
     "ability",
     "able",
