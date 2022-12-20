@@ -400,6 +400,27 @@ function accessTokenAuth(req, res, next) {
 		res.status(500).send('internal server error');
 	}
 }
+
+function tokenInfo(req, res, next) {
+	try {
+		if(!req.body.token) return res.status(403).send('no token');
+		let token = req.body.token;
+		if (!token || token.length < 16) return res.status(403).send('no token');		
+		db.checkAccessToken(token, ['identify'], (err, state, user) => {
+			if(err) return res.status(500).send('internal server error');
+			if(state == "invalid") return res.status(403).send('invalid token');
+			if(!user) return res.status(403).send('invalid token');
+			req.user = user;
+			db.getTokenInfo(token, (err, tokenInfo) => {
+				req.session.token = tokenInfo
+				next();
+			})
+		})
+	} catch(e) {
+		console.error(e);
+		res.status(500).send('internal server error');
+	}
+}
 /* //////////////////////////////////
 	Public API and OAuth2
    ////////////////////////////////// */
@@ -539,6 +560,34 @@ app.post('/oauth/authorize', checkAuth, (req, res) => {
 			res.redirect(`${req.query.redirect_uri}?code=${code.code}${req.query.state ? "&state=" + req.query.state : ""}`);
 		})
 	})
+})
+
+app.post('/api/oauth2/token_info', (req, res) => {
+	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send({type: "error", message: "invalid token type"});
+		if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
+		let clientId = req.body.client_id;
+		let clientSecret = req.body.client_secret;
+		if(req.headers.authorization) {
+			let decoded = Buffer.from(req.headers.authorization.split(" ")[1], 'base64').toString('utf-8')
+			decoded = decoded.split(":")
+			clientId = decoded[0]
+			clientSecret = decoded[1]
+		}
+		// trim whitespace because whitespace is stupid
+		clientId = clientId.trim()
+		clientSecret = clientSecret.trim()
+		db.getApplication(clientId, (err, app) => {
+				if (err) return res.status(500).send({type: "error", message: "internal server error"});
+				if (!app) return res.status(400).send({type: "error", message: "invalid client id"});
+				if (app.clientSecret != clientSecret) return res.status(400).send({type: "error", message: "invalid client secret"});
+				res.json({
+				  "active": new Date(req.session.token.expires).getTime() > Date.now(),
+				  "scope": req.session.token.scopes.join(" "),
+				  "client_id": clientId,
+				  "username": req.user.username,
+				  "exp": new Date(req.session.token.expires).getTime() / 1000
+				})
+		})
 })
 
 app.post('/api/oauth2/token', (req, res) => {
