@@ -563,7 +563,7 @@ app.post('/oauth/authorize', checkAuth, (req, res) => {
 	})
 })
 
-app.post('/api/oauth2/token_info', (req, res) => {
+app.post('/api/oauth2/token_info', tokenInfo, (req, res) => {
 	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).json({active: false});
 		if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).json({active: false});
 		let clientId = req.body.client_id;
