@@ -442,6 +442,30 @@ app.get('/oauth/unauthorize/:tokenId', checkAuth, (req, res) => {
 	})
 })
 
+app.get('/oauth/metadata', (req, res) => {
+	let metadata = {
+		"issuer": "https://auth.litdevs.org",
+		"authorization_endpoint": "https://auth.litdevs.org/oauth/authorize",
+		"token_endpoint": "https://auth.litdevs.org/api/oauth2/token",
+		"response_types_supported": [
+		    "code"
+		  ],
+		"scopes_supported": [
+		    "identify",
+		    "email"
+		  ],
+		"token_endpoint_auth_methods_supported": [
+		    "client_secret_post",
+		    "client_secret_basic"
+		  ],
+		"grant_types_supported": [
+		    "authorization_code",
+    		    "refresh_token"
+		  ]
+	}
+	res.json(metadata)
+})
+
 app.post("/api/avatar", checkAuthOrToken, (req, res) => {
 	if(!req.body.color) return res.status(400).send({type: "error", message: "Missing color"});
 	if(!req.body.background) return res.status(400).send({type: "error", message: "Missing background"});
