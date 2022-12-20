@@ -442,7 +442,7 @@ app.get('/oauth/unauthorize/:tokenId', checkAuth, (req, res) => {
 	})
 })
 
-app.get('/oauth/metadata', (req, res) => {
+app.get('/.well-known/oauth-authorization-server', (req, res) => {
 	let metadata = {
 		"issuer": "https://auth.litdevs.org",
 		"authorization_endpoint": "https://auth.litdevs.org/oauth/authorize",
