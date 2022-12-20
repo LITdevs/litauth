@@ -468,6 +468,7 @@ app.all('/.well-known/openid-configuration', (req, res) => {
 		"issuer": "https://auth.litdevs.org",
 		"authorization_endpoint": "https://auth.litdevs.org/oauth/authorize",
 		"token_endpoint": "https://auth.litdevs.org/api/oauth2/token",
+		"introspection_endpoint": "https://auth.litdevs.org/api/oauth2/token_info",
 		"response_types_supported": [
 		    "code"
 		  ],
@@ -563,8 +564,8 @@ app.post('/oauth/authorize', checkAuth, (req, res) => {
 })
 
 app.post('/api/oauth2/token_info', (req, res) => {
-	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).send({type: "error", message: "invalid token type"});
-		if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).send({type: "error", message: "Invalid request"});
+	if (req.headers.authorization && !req.headers.authorization.trim().startsWith("Basic")) return res.status(403).json({active: false});
+		if (!req.headers.authorization && (!req.body.client_id || !req.body.client_secret)) return res.status(400).json({active: false});
 		let clientId = req.body.client_id;
 		let clientSecret = req.body.client_secret;
 		if(req.headers.authorization) {
@@ -577,9 +578,9 @@ app.post('/api/oauth2/token_info', (req, res) => {
 		clientId = clientId.trim()
 		clientSecret = clientSecret.trim()
 		db.getApplication(clientId, (err, app) => {
-				if (err) return res.status(500).send({type: "error", message: "internal server error"});
-				if (!app) return res.status(400).send({type: "error", message: "invalid client id"});
-				if (app.clientSecret != clientSecret) return res.status(400).send({type: "error", message: "invalid client secret"});
+				if (err) return res.status(500).json({active: false});
+				if (!app) return res.status(400).json({active: false});
+				if (app.clientSecret != clientSecret) return res.status(400).json({active: false});
 				res.json({
 				  "active": new Date(req.session.token.expires).getTime() > Date.now(),
 				  "scope": req.session.token.scopes.join(" "),
