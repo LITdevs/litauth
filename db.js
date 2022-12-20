@@ -222,6 +222,14 @@ function getToken(tokenId, cb) {
 	})
 }
 
+
+function getTokenInfo(token, cb) {
+	Token.findOne({token:token}, (err, token) => {
+		if (err) return cb(err, null)
+		return cb(null, token)
+	})
+}
+
 function deleteToken(tokenId, cb) {
 	Token.deleteOne({_id:tokenId}, (err) => {
 		if (err) {
@@ -474,5 +482,6 @@ module.exports = {
 	tokenFromRefresh,
 	migrate,
 	sendMigration,
-	sendMigrationToAll
+	sendMigrationToAll,
+	getTokenInfo
 }
