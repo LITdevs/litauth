@@ -13,6 +13,7 @@
 	<audio id="coolmusic3" autoplay muted loop src="/resources/signup_3.mp3"></audio>
     <%- include("./common/nav.ejs", {user: user}); %> 
 	<noscript><%- include('./common/error.ejs', { type: "hmmky", title: "You need to have JavaScript enabled!", message: "Without it, most of our sites won't work properly."}) %></noscript>
+	<%- include('./common/error.ejs', { type: "hmmky", title: "Code peeking detected!!", message: "I am so scared right now.", hidden: true }) %>
 	<div id="register_info" class="hidden">
 		<h1 class="text-center text-vwhite text-3xl"><b>Welcome to LITauth!</b></h1><br>
 		<form id="registrationForm" class="mt-20p text-center">
@@ -110,7 +111,7 @@
 	}
 	let currentStage = 1;
 	function nextTrack() {
-		document.querySelector(".youfailed-wrap").classList.add("hidden")
+		if(document.querySelector(".youfailed-wrap")) document.querySelector(".youfailed-wrap").classList.add("hidden")
 		document.querySelector(`#coolmusic${currentStage + 1}`).muted = false;
 		document.querySelector(`#coolmusic${currentStage}`).muted = true;
 		currentStage += 1;
@@ -214,6 +215,7 @@
 								password: document.getElementById("registrationForm").password.value
 							})
 						}).then(res => {
+							if (res.redirected && !res.url.endsWith("profile")) return window.location.href = res.url;
 							nextTrack()
 							document.getElementById('loading').classList.add("hidden")
 							document.getElementById('completed').classList.remove("hidden")

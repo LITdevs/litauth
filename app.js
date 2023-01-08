@@ -65,6 +65,7 @@ app.use(function (err, req, res, next) {
 	if(csrfWhitelist.includes(req.url)) return next()
 })
 app.use(function (req, res, next) {
+	console.log(req.cookies)
 	if (/MSIE|Trident/.test(req.headers['user-agent'])) return res.render(`${__dirname}/public/error.ejs`, { stacktrace: null, friendlyError: "Your browser is no longer supported. Please <a href='https://browser-update.org/update-browser.html'>update your browser</a>." });
 	if(req.method == "GET" && !emailConfig && req.url != "/oobe/emailFinal" ) return res.render(`${__dirname}/public/emailConfig.ejs`, {csrfToken: req.csrfToken()});
 	if(process.env.LOCKED) return res.status(404).render(`${__dirname}/public/404.ejs`);
@@ -240,7 +241,7 @@ app.post("/login/register/1", (req, res) => {
 					req.session.passwordHash = pwd
 					req.session.salt = salt
 					req.session.resend = false
-					req.session.emailCode = parseInt(Math.random().toString().substring(2,8))
+					req.session.emailCode = parseInt(Math.random().toString().substring(2,8).padStart(6, "0"))
 					req.session.save(err => {
 						if (err) return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
 						let transporter = nodemailer.createTransport(emailConfig.mailerConfig);
