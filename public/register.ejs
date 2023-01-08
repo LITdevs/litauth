@@ -110,7 +110,7 @@
 	}
 	let currentStage = 1;
 	function nextTrack() {
-		document.querySelector(".youfailed-wrap").classList.add("hidden")
+		if(document.querySelector(".youfailed-wrap")) document.querySelector(".youfailed-wrap").classList.add("hidden")
 		document.querySelector(`#coolmusic${currentStage + 1}`).muted = false;
 		document.querySelector(`#coolmusic${currentStage}`).muted = true;
 		currentStage += 1;
