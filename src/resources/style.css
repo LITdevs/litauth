@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import url(https://litdevs.org/global/global.css);
 
 .button {
     @apply whitespace-normal inline-flex items-center px-4 py-2 rounded-lg shadow-md text-wdark bg-vwhite dark:text-vwhite dark:bg-wdark dark:hover:bg-vukky dark:hover:text-vwhite hover:bg-vukky hover:text-vwhite;
