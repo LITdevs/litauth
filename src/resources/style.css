@@ -1,7 +1,7 @@
+@import url(https://litdevs.org/global/global.css);
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url(https://litdevs.org/global/global.css);
 
 html {
     font-family: wuhu;
