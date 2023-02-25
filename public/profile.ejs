@@ -14,7 +14,6 @@
 			<a href="/designer"><img src="/api/avatar/<%=user._id%>" class="rounded-full h-16 w-16 inline cursor-pointer" style="background-color:<%=user.avatar.background%>" alt="avatar"></a>
 			<a href="/editProfile" title="Edit your username"><p class="pl-5 hover:bg-opacity-30 hover:bg-gray-900 text-wdark dark:text-vwhite inline rounded-sm py-1"><%= user.username %><i class="fa pl-3 s fa-edit"></i></p></a>
 			<br><p title="This is your email address. You can't change it yet" class="pl-5 text-gray-400 my-1"><%= user.email %></p>
-			<br><form method="POST" action="/migrate"><input type="text" placeholder="Vukkybox migration code" name="migrationCode" class="input-box" required/> <input type="hidden" name="_csrf" value="<%=csrfToken%>"><input type="submit" class="button-dark"></form>
 			<a href="/changePassword" class="text-blue-500">Change password</a>
 			<br><br>
 			<p class="text-wdark dark:text-vwhite font-bold">Authorized applications</p>

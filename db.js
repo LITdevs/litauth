@@ -6,73 +6,12 @@ const fs = require("fs")
 
 const db = mongoose.createConnection(process.env.MONGODB_HOST);
 const tokendb = mongoose.createConnection(process.env.MONGODB_OAUTH_HOST);
-const oldvukkyboxdb = mongoose.createConnection(process.env.MONGODB_OLD_VUKKYBOX_HOST);
-const vukkyboxdb = mongoose.createConnection(process.env.MONGODB_VUKKYBOX_HOST);
 db.on('error', console.error.bind(console, 'connection error:'));
 tokendb.on('error', console.error.bind(console, 'connection error:'));
-oldvukkyboxdb.on('error', console.error.bind(console, 'connection error:'));
-vukkyboxdb.on('error', console.error.bind(console, 'connection error:'));
 var User
 var Token
 var Code
 var Application
-var Migrate
-var OldVBUser
-var VBUser
-oldvukkyboxdb.once('open', function () {
-	const OldVBUserSchema = new mongoose.Schema({
-		githubId: String,
-		discordId: String,
-		googleId: String,
-		primaryEmail: String,
-		githubEmail: String,
-		discordEmail: String,
-		googleEmail: String,
-		LinkedAccounts: Array,
-		username: String,
-		balance: {type: Number, default: 1000},
-		gallery: Array,
-		loginHourly: {type: Date, default: Date.now()},
-		loginDaily: {type: Date, default: Date.now()},
-		boxesOpened: {type: Number, default: 0},
-		codesRedeemed: {type: Number, default: 0},
-		uniqueVukkiesGot: {type: Number, default: 0},
-		RVNid: String,
-		popupAccepted: {type: Boolean, default: true},
-		twoFactor: {type: Boolean, default: false},
-		twoFactorSecret: String,
-		duplicates: Object,
-		transactions: Array,
-		beta: {type: Boolean, default: false},
-		twoFactorClaimed: {type: Boolean, default: false},
-		newsPopup: {type: Boolean, default: true},
-	})
-	OldVBUser = oldvukkyboxdb.model('User', OldVBUserSchema);
-})
-vukkyboxdb.once('open', function () {
-	const VBUserSchema = new mongoose.Schema({
-		litauthId: String,
-		primaryEmail: String,
-		username: String,
-		balance: {type: Number, default: 1000},
-		gallery: Array,
-		loginHourly: {type: Date, default: Date.now()},
-		loginDaily: {type: Date, default: Date.now()},
-		boxesOpened: {type: Number, default: 0},
-		codesRedeemed: {type: Number, default: 0},
-		uniqueVukkiesGot: {type: Number, default: 0},
-		popupAccepted: {type: Boolean, default: true},
-		twoFactor: {type: Boolean, default: false},
-		twoFactorSecret: String,
-		duplicates: Object,
-		transactions: Array,
-		beta: {type: Boolean, default: false},
-		twoFactorClaimed: {type: Boolean, default: false},
-		newsPopup: {type: Boolean, default: true},
-		legacy: Boolean
-	})
-	VBUser = vukkyboxdb.model('User', VBUserSchema);
-})
 db.once('open', function() {
 	const userSchema = new mongoose.Schema({
 		username: {type: String, unique : true},
@@ -82,11 +21,6 @@ db.once('open', function() {
 		salt: Buffer
 	});
 	User = db.model('User', userSchema);
-	const migrateSchema = new mongoose.Schema({
-		vukkyboxId: String,
-		migrationCode: String
-	});
-	Migrate = db.model('Migration', migrateSchema);
 	const codeSchema = new mongoose.Schema({
 		code: {type: String, unique : true},
 		userId: String,
@@ -361,103 +295,6 @@ function tokenFromRefresh(rt, callback) {
 	})
 }
 
-function migrate(migrationCode, lituser, callback) {
-	Migrate.findOne({migrationCode: migrationCode}, (err, doc) => {
-		if (err) return callback(err, null);
-		if (!doc) return callback("invalid", null);
-		VBUser.findOne({litauthId: lituser._id}, (err, lvbuser) => {
-			if (err) return callback(err, null);
-			if (lvbuser) return callback("exists", null);
-			OldVBUser.findOne({_id: doc.vukkyboxId}, (err, vbuser) => {
-				if (err) return callback(err, null);
-				if (!vbuser) return callback("invalid", null);
-				let user = new VBUser({
-					litauthId: lituser._id,
-					primaryEmail: lituser.email,
-					username: lituser.username,
-					balance: vbuser.balance,
-					gallery: vbuser.gallery,
-					loginHourly: vbuser.loginHourly,
-					loginDaily: vbuser.loginDaily,
-					boxesOpened: vbuser.boxesOpened,
-					codesRedeemed: vbuser.codesRedeemed,
-					uniqueVukkiesGot: vbuser.uniqueVukkiesGot,
-					popupAccepted: false,
-					twoFactor: vbuser.twoFactor,
-					twoFactorSecret: vbuser.twoFactorSecret,
-					duplicates: vbuser.duplicates,
-					transactions: vbuser.transactions,
-					beta: vbuser.beta,
-					twoFactorClaimed: vbuser.twoFactorClaimed,
-					newsPopup: vbuser.newsPopup,
-					legacy: true
-				})
-				user.save((err, savedUser) => {
-					if (err) return callback(err, null);
-					doc.remove((err) => {
-						if (err) return callback(err, null);
-						vbuser.remove((err) => {
-							if (err) return callback(err, null);
-							callback(null, savedUser)
-						})
-					})
-				})
-			})	
-		})
-	})
-}
-
-function sendMigration(email, username, id) {
-	let emailConfig = JSON.parse(fs.readFileSync(`${__dirname}/emailConfig.json`).toString())
-	let migrationCode = crypto.randomBytes(16).toString("hex")
-	let migrate = new Migrate({
-		migrationCode: migrationCode,
-		vukkyboxId: id
-	})
-	migrate.save((err, doc) => {
-		if (err) console.error(err)
-		let transporter = nodemailer.createTransport(emailConfig.mailerConfig);
-		let emailContent = fs.readFileSync(`${__dirname}/email/migrate.html`).toString();
-		emailContent = emailContent.replace("$username", username);
-		emailContent = emailContent.replace("$migrationCode", migrationCode);
-		transporter.sendMail({
-			from: emailConfig.sender,
-			to: email,
-			subject: "Important update regarding Vukkybox login",
-			html: emailContent
-		})
-	})
-}
-
-function sendMigrationToAll() {
-	let emailConfig = JSON.parse(fs.readFileSync(`${__dirname}/emailConfig.json`).toString())
-	
-	let transporter = nodemailer.createTransport({...emailConfig.mailerConfig, pool: true, maxMessages: Infinity});
-	let emailContent = fs.readFileSync(`${__dirname}/email/migrate.html`).toString();
-
-	OldVBUser.find({}, (err, users) => {
-		if (err) return console.error(err)
-		users.forEach((user, index) => {
-			let parsedEmailContent = emailContent.replace("$username", user.username);
-			let migrationCode = crypto.randomBytes(10).toString("hex")
-			parsedEmailContent = parsedEmailContent.replace("$migrationCode", migrationCode);
-			let migrate = new Migrate({
-				migrationCode: migrationCode,
-				vukkyboxId: user._id
-			})
-			migrate.save((err, doc) => {
-				if (err) console.error(err)
-				transporter.sendMail({
-					from: emailConfig.sender,
-					to: user.primaryEmail,
-					subject: "Important update regarding Vukkybox login",
-					html: parsedEmailContent
-				})
-			});
-		})
-	})
-}
-
 module.exports = {
 	login,
 	checkEmail,
@@ -480,8 +317,5 @@ module.exports = {
 	deleteToken,
 	findExistingToken,
 	tokenFromRefresh,
-	migrate,
-	sendMigration,
-	sendMigrationToAll,
 	getTokenInfo
 }

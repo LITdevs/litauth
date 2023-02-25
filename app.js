@@ -16,10 +16,10 @@ let scopeJson = require(`${__dirname}/public/scopes.json`)
 const MongoDBStore = require("connect-mongodb-session")(session);
 const vukkysvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky2.svg`).toString();
 const vukkybgsvg = fs.readFileSync(`${__dirname}/public/resources/designer/vukky.svg`).toString();
-const words = require("./util/words.js")
+const words = require("./util/words.js");
+const sharp = require("sharp");
 
 var oobe = require('./routes/oobe');
-
 // Check for email config
 let emailConfig = false
 if (fs.existsSync(`${__dirname}/emailConfig.json`)) {
@@ -321,20 +321,6 @@ app.post("/login/register/2", (req, res) => {
 	})
 })
 
-app.post("/migrate", checkAuth, (req, res) => {
-	if(!req.body.migrationCode) return res.send(400).send({type: "error", message: "Please enter a migration code"});
-	db.migrate(req.body.migrationCode, req.user, (err, resp) => {
-		if(err) {
-			if (err == "invalid") return res.status(400).send({type: "error", message: "Invalid migration code"});
-			if (err == "exists") return res.status(400).send({type: "error", message: "A vukkybox user is already linked to this account. Please delete the existing vukkybox user and try again."});
-			console.error(err);
-			return res.status(500).send({type: "error", message: "Internal server error, please try again later"});
-		}
-		if (!resp) return res.status(500).send({type: "error", message: "¯\_(ツ)_/¯"}); 
-		res.redirect("/profile?migration=success")
-	});
-})
-
 app.get("/designer", checkAuth, (req, res) => {
 	let user = req.user._id ? req.user : req.user[0]
 	res.render(`${__dirname}/public/designer.ejs`, {user, csrfToken: req.csrfToken(), svg: vukkysvg});
@@ -436,21 +422,38 @@ app.get('/api/user/email', accessTokenAuth, (req, res) => {
 })
 
 app.get("/api/avatar/bg/:userId", (req, res) => {
-	db.getUser(req.params.userId, (err, user) => {
+	db.getUser(req.params.userId, async (err, user) => {
 		if(err) return res.status(500).send('internal server error');
 		if(!user) return res.status(404).send('user not found');
-		res.contentType('image/svg+xml');
-		let finalSvg = vukkybgsvg.replace("$BGCOLOR", user.avatar.background)
-		res.send(finalSvg.replace("#00a8f3", user.avatar.color));
+		let finalSvg = vukkybgsvg.replace("$BGCOLOR", user.avatar.background).replace("#00a8f3", user.avatar.color)
+		if (req.query.format !== "png") {
+			res.contentType('image/svg+xml');
+			res.send(finalSvg);
+		} else {
+			const buffer = Buffer.from(finalSvg);
+			const img = await sharp(buffer).flatten({ background: user.avatar.background }).png().toBuffer();
+
+			res.contentType('image/png');
+			res.send(img);
+		}
 	})
 })
 
 app.get("/api/avatar/:userId", (req, res) => {
-	db.getUser(req.params.userId, (err, user) => {
+	db.getUser(req.params.userId, async (err, user) => {
 		if(err) return res.status(500).send('internal server error');
 		if(!user) return res.status(404).send('user not found');
-		res.contentType('image/svg+xml');
-		res.send(vukkysvg.replace("#00a8f3", user.avatar.color));
+		let finalSvg = vukkysvg.replace("#00a8f3", user.avatar.color)
+		if (req.query.format !== "png") {
+			res.contentType('image/svg+xml');
+			res.send(finalSvg);
+		} else {
+			const buffer = Buffer.from(finalSvg);
+			const img = await sharp(buffer).png().toBuffer();
+
+			res.contentType('image/png');
+			res.send(img);
+		}
 	})
 })
 
@@ -847,7 +850,6 @@ app.get('*', function(req, res){
 });
 
 var http = require('http');
-const { allowedNodeEnvironmentFlags, ppid } = require('process');
 
 const httpServer = http.createServer(app);
 
