@@ -66,6 +66,13 @@ app.use(function (err, req, res, next) {
 })
 app.use(function (req, res, next) {
 	console.log(req.cookies)
+	if (req.url.startsWith("/api")) {
+		res.header("Access-Control-Allow-Origin", "*")
+		res.header("Access-Control-Allow-Headers", "*")
+		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		res.header("Access-Control-Allow-Credentials", "true")
+		return next()
+	}
 	if (/MSIE|Trident/.test(req.headers['user-agent'])) return res.render(`${__dirname}/public/error.ejs`, { stacktrace: null, friendlyError: "Your browser is no longer supported. Please <a href='https://browser-update.org/update-browser.html'>update your browser</a>." });
 	if(req.method == "GET" && !emailConfig && req.url != "/oobe/emailFinal" ) return res.render(`${__dirname}/public/emailConfig.ejs`, {csrfToken: req.csrfToken()});
 	if(process.env.LOCKED) return res.status(404).render(`${__dirname}/public/404.ejs`);
