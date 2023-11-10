@@ -65,7 +65,6 @@ app.use(function (err, req, res, next) {
 	if(csrfWhitelist.includes(req.url)) return next()
 })
 app.use(function (req, res, next) {
-	console.log(req.cookies)
 	if (req.url.startsWith("/api")) {
 		res.header("Access-Control-Allow-Origin", "*")
 		res.header("Access-Control-Allow-Headers", "*")
